@@ -1045,20 +1045,39 @@ function renderAuth() {
 }
 
 function login(userId, password) {
-  const user = demoUsers.find((item) => item.id === userId && item.password === password);
-  if (!user) {
-    const notice = document.querySelector("#loginNotice");
-    notice.textContent = "Invalid login. Use a valid student, faculty, or admin account.";
-    notice.className = "notice show error";
-    return;
-  }
+  const submitBtn = document.querySelector("#loginSubmitBtn");
+  const submitText = submitBtn?.querySelector(".login-submit-text");
+  const submitSpinner = submitBtn?.querySelector(".login-spinner");
+  const notice = document.querySelector("#loginNotice");
 
-  currentUser = user;
-  saveSession(user);
-  document.querySelector("#loginForm").reset();
-  document.querySelector("#loginNotice").className = "notice";
-  renderAuth();
-  renderAll();
+  // Show loading state
+  if (submitText) submitText.style.display = "none";
+  if (submitSpinner) submitSpinner.style.display = "inline-block";
+  if (submitBtn) submitBtn.disabled = true;
+
+  // Small delay for UX feel
+  setTimeout(() => {
+    const user = demoUsers.find((item) => item.id === userId && item.password === password);
+
+    // Restore button
+    if (submitText) submitText.style.display = "";
+    if (submitSpinner) submitSpinner.style.display = "none";
+    if (submitBtn) submitBtn.disabled = false;
+
+    if (!user) {
+      notice.textContent = "Invalid credentials. Use a valid student, faculty, or admin account.";
+      notice.className = "notice show error login-shake";
+      setTimeout(() => notice.classList.remove("login-shake"), 400);
+      return;
+    }
+
+    currentUser = user;
+    saveSession(user);
+    document.querySelector("#loginForm").reset();
+    notice.className = "notice";
+    renderAuth();
+    renderAll();
+  }, 500);
 }
 
 function logout() {
@@ -1208,6 +1227,25 @@ function wireEvents() {
     const user = demoUsers.find((item) => item.id === button.dataset.demoUser);
     if (user) login(user.id, user.password);
   });
+
+  // Password visibility toggle
+  const togglePw = document.querySelector("#togglePassword");
+  if (togglePw) {
+    togglePw.addEventListener("click", () => {
+      const pwInput = document.querySelector("#login-password");
+      const eyeOpen = togglePw.querySelector(".eye-open");
+      const eyeClosed = togglePw.querySelector(".eye-closed");
+      if (pwInput.type === "password") {
+        pwInput.type = "text";
+        if (eyeOpen) eyeOpen.style.display = "none";
+        if (eyeClosed) eyeClosed.style.display = "";
+      } else {
+        pwInput.type = "password";
+        if (eyeOpen) eyeOpen.style.display = "";
+        if (eyeClosed) eyeClosed.style.display = "none";
+      }
+    });
+  }
 
   document.querySelector("#logoutButton").addEventListener("click", logout);
 
