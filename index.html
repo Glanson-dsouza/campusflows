@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Smart Campus Resource Optimization Platform</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <section class="login-screen" aria-labelledby="loginTitle">
+      <div class="login-panel">
+        <div class="brand login-brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M7 18 24 8l17 10-17 10L7 18Z" />
+              <path d="M13 24v9c5 6 17 6 22 0v-9" />
+              <path d="M41 19v14" />
+            </svg>
+          </div>
+          <div>
+            <strong>Smart Campus</strong>
+            <span>Role based access</span>
+          </div>
+        </div>
+        <div>
+          <p class="eyebrow">Secure portal</p>
+          <h1 id="loginTitle">Sign in to continue</h1>
+          <p class="login-copy">Students and faculty can request resources with limited access. Administrators can monitor, approve, and manage the platform.</p>
+        </div>
+        <form class="login-form" id="loginForm">
+          <label>
+            User ID
+            <input name="userId" autocomplete="username" required placeholder="student01" />
+          </label>
+          <label>
+            Password
+            <input name="password" type="password" autocomplete="current-password" required placeholder="Enter password" />
+          </label>
+          <button class="primary" type="submit">Login</button>
+          <div class="notice" id="loginNotice" role="alert"></div>
+        </form>
+        <div class="demo-users" aria-label="Demo accounts">
+          <button type="button" data-demo-user="student01">Student demo</button>
+          <button type="button" data-demo-user="faculty01">Faculty demo</button>
+          <button type="button" data-demo-user="admin01">Admin demo</button>
+        </div>
+      </div>
+    </section>
+
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 48 48" role="img">
+              <path d="M7 18 24 8l17 10-17 10L7 18Z" />
+              <path d="M13 24v9c5 6 17 6 22 0v-9" />
+              <path d="M41 19v14" />
+            </svg>
+          </div>
+          <div>
+            <strong>Smart Campus</strong>
+            <span>Resource Optimization</span>
+          </div>
+        </div>
+
+        <nav class="nav" aria-label="Primary">
+          <button class="nav-item active" data-view="dashboard" data-min-role="faculty" title="Dashboard">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h7V4H4v9Zm0 7h7v-5H4v5Zm9 0h7v-9h-7v9Zm0-16v5h7V4h-7Z" /></svg>
+            Dashboard
+          </button>
+          <button class="nav-item" data-view="resources" title="Resources">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v4H3V5Zm2 6h14v8H5v-8Zm3 2v4h3v-4H8Zm5 0v4h3v-4h-3Z" /></svg>
+            Resources
+          </button>
+          <button class="nav-item" data-view="booking" title="Booking">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2Zm-1 9v9h12v-9H6Zm2 2h4v4H8v-4Z" /></svg>
+            Booking
+          </button>
+          <button class="nav-item" data-view="events" title="Events">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2Zm-1 8v10h12V10H6Zm2 2h3v3H8v-3Zm5 0h3v3h-3v-3Z" /></svg>
+            Events
+          </button>
+          <button class="nav-item" data-view="map" title="Campus map">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4-6-2-6 2v18l6-2 6 2 6-2V2l-6 2Zm-8 .7v13.6l-2 .7V5.3l2-.6Zm6 14.6-4-1.4V4.7l4 1.4v13.2Zm6-.6-2 .6V5.7l2-.7v13.7Z" /></svg>
+            Map
+          </button>
+          <button class="nav-item" data-view="admin" data-min-role="admin" title="Admin">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 4 5v6c0 5 3.4 9.7 8 11 4.6-1.3 8-6 8-11V5l-8-3Zm0 4 4 1.5V11c0 3-1.6 5.7-4 7-2.4-1.3-4-4-4-7V7.5L12 6Z" /></svg>
+            Admin
+          </button>
+        </nav>
+
+        <div class="sidebar-note">
+          <span class="pulse"></span>
+          Live conflict detection and utilization scoring are enabled.
+        </div>
+      </aside>
+
+      <main class="main">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">PES Institute of Technology & Management</p>
+            <h1 id="pageTitle">Admin Dashboard</h1>
+          </div>
+          <div class="top-actions">
+            <div class="user-chip" id="userChip"></div>
+            <label class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 19.6-5.2-5.2a7 7 0 1 0-1.4 1.4l5.2 5.2 1.4-1.4ZM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z" /></svg>
+              <input id="globalSearch" type="search" placeholder="Search resources, bookings..." />
+            </label>
+            <button class="icon-button" id="resetDemo" title="Reset demo data" aria-label="Reset demo data">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.3 4H3l4-4 4 4H8a5 5 0 1 0 4-2V5Z" /></svg>
+            </button>
+            <button class="icon-button" id="logoutButton" title="Logout" aria-label="Logout">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 17v-2h4V9h-4V7l-5 5 5 5Zm2 4h8V3h-8v2h6v14h-6v2Z" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <section class="view active" id="dashboardView">
+          <div class="metric-grid" id="metrics"></div>
+          <div class="content-grid">
+            <section class="panel wide">
+              <div class="panel-header">
+                <div>
+                  <h2>Resource Occupancy</h2>
+                  <p>Current approved bookings and utilization by resource.</p>
+                </div>
+                <select id="trendFilter" aria-label="Usage trend filter">
+                  <option value="all">All types</option>
+                  <option value="Classroom">Classrooms</option>
+                  <option value="Lab">Labs</option>
+                  <option value="Seminar Hall">Seminar halls</option>
+                  <option value="Equipment">Equipment</option>
+                </select>
+              </div>
+              <div class="chart-list" id="occupancyChart"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Conflict Alerts</h2>
+                  <p>Requests that need attention.</p>
+                </div>
+              </div>
+              <div id="conflictAlerts" class="stack"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="resourcesView">
+          <div class="toolbar">
+            <div class="segmented" id="typeFilters" aria-label="Resource type filter">
+              <button class="active" data-type="all">All</button>
+              <button data-type="Classroom">Classroom</button>
+              <button data-type="Lab">Lab</button>
+              <button data-type="Seminar Hall">Hall</button>
+              <button data-type="Equipment">Equipment</button>
+            </div>
+            <select id="availabilityFilter" aria-label="Availability filter">
+              <option value="all">All availability</option>
+              <option value="Available">Available</option>
+              <option value="Occupied">Occupied</option>
+              <option value="Maintenance">Maintenance</option>
+            </select>
+          </div>
+          <div class="resource-grid" id="resourceGrid"></div>
+        </section>
+
+        <section class="view" id="bookingView">
+          <div class="booking-layout">
+            <form class="panel booking-form" id="bookingForm">
+              <div class="panel-header">
+                <div>
+                  <h2>Request a Resource</h2>
+                  <p>Overlapping bookings are blocked before submission.</p>
+                </div>
+              </div>
+              <label>
+                Requester
+                <input name="requester" required placeholder="Department, faculty, or club" />
+              </label>
+              <label>
+                Purpose
+                <input name="purpose" required placeholder="Workshop, lab session, seminar..." />
+              </label>
+              <div class="form-row">
+                <label>
+                  Resource type
+                  <select name="type" id="bookingType" required></select>
+                </label>
+                <label>
+                  Capacity needed
+                  <input name="capacity" type="number" min="1" value="40" required />
+                </label>
+              </div>
+              <label>
+                Preferred resource
+                <select name="resourceId" id="bookingResource" required></select>
+              </label>
+              <div class="form-row">
+                <label>
+                  Date
+                  <input name="date" type="date" required />
+                </label>
+                <label>
+                  Start time
+                  <input name="start" type="time" min="08:00" max="18:00" required />
+                </label>
+                <label>
+                  End time
+                  <input name="end" type="time" min="08:30" max="19:00" required />
+                </label>
+              </div>
+              <div class="form-actions">
+                <button class="primary" type="submit">Submit request</button>
+                <button class="secondary" type="button" id="optimizePick">Find best fit</button>
+              </div>
+              <div class="notice" id="bookingNotice" role="status"></div>
+            </form>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Smart Suggestions</h2>
+                  <p>Alternatives based on capacity, availability, and usage load.</p>
+                </div>
+              </div>
+              <div id="suggestions" class="stack"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="eventsView">
+          <div class="toolbar">
+            <div class="segmented" id="eventFilters" aria-label="Event time filter">
+              <button class="active" data-event-filter="all">All</button>
+              <button data-event-filter="current">Current</button>
+              <button data-event-filter="upcoming">Upcoming</button>
+              <button data-event-filter="registered">Registered</button>
+            </div>
+            <select id="eventTypeFilter" aria-label="Event type filter">
+              <option value="all">All event types</option>
+              <option value="Technical">Technical</option>
+              <option value="Cultural">Cultural</option>
+              <option value="Placement">Placement</option>
+              <option value="Sports">Sports</option>
+              <option value="Workshop">Workshop</option>
+            </select>
+          </div>
+          <div class="event-grid" id="eventGrid"></div>
+        </section>
+
+        <section class="view" id="mapView">
+          <div class="toolbar">
+            <div class="segmented" id="mapTypeFilters" aria-label="Map resource type filter">
+              <button class="active" data-map-type="all">All</button>
+              <button data-map-type="Classroom">Classroom</button>
+              <button data-map-type="Lab">Lab</button>
+              <button data-map-type="Seminar Hall">Hall</button>
+              <button data-map-type="Equipment">Equipment</button>
+            </div>
+            <select id="mapBuildingFilter" aria-label="Map building filter">
+              <option value="all">All buildings</option>
+            </select>
+          </div>
+          <form class="map-search panel" id="mapSearchForm">
+            <label>
+              Current location
+              <select id="currentLocation"></select>
+            </label>
+            <label>
+              Search destination
+              <input id="destinationSearch" list="destinationList" placeholder="Classroom B-204, AI & ML Lab, Block A..." required />
+              <datalist id="destinationList"></datalist>
+            </label>
+            <button class="primary" type="submit">Navigate</button>
+          </form>
+          <div class="map-layout">
+            <section class="campus-map" aria-label="Campus resource location map">
+              <svg class="map-route" id="mapRouteSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
+              <div class="map-road horizontal"></div>
+              <div class="map-road vertical"></div>
+              <div class="map-zone zone-a">Block A</div>
+              <div class="map-zone zone-b">Block B</div>
+              <div class="map-zone zone-c">Block C</div>
+              <div class="map-zone zone-d">Block D</div>
+              <div class="map-zone zone-admin">Admin Block</div>
+              <div class="map-zone zone-ground">Campus Ground</div>
+              <div class="map-zone zone-media">Media Cell</div>
+              <div class="map-zone zone-innovation">Innovation Lab</div>
+              <div id="currentMarker"></div>
+              <div id="mapPins"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Location Details</h2>
+                  <p>Classrooms, labs, halls, and shared resources by campus area.</p>
+                </div>
+              </div>
+              <div class="notice show route-notice" id="routeNotice">Choose your current location and search a room or place to navigate.</div>
+              <div class="stack" id="mapDetails"></div>
+            </section>
+          </div>
+        </section>
+
+        <section class="view" id="adminView">
+          <div class="content-grid">
+            <section class="panel wide">
+              <div class="panel-header">
+                <div>
+                  <h2>Booking Management</h2>
+                  <p>Create, approve, reject, and track requests.</p>
+                </div>
+                <select id="bookingStatusFilter" aria-label="Booking status filter">
+                  <option value="all">All statuses</option>
+                  <option value="Pending">Pending</option>
+                  <option value="Approved">Approved</option>
+                  <option value="Rejected">Rejected</option>
+                </select>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Resource</th>
+                      <th>Requester</th>
+                      <th>Schedule</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="bookingTable"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Optimization Report</h2>
+                  <p>Recommendations for better campus utilization.</p>
+                </div>
+              </div>
+              <div id="optimizationReport" class="stack"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>Resource Controls</h2>
+                  <p>Add resources and update operational status.</p>
+                </div>
+              </div>
+              <form class="resource-form" id="resourceForm">
+                <label>
+                  Resource name
+                  <input name="name" required placeholder="Classroom C-302" />
+                </label>
+                <div class="form-row two">
+                  <label>
+                    Type
+                    <select name="type" required></select>
+                  </label>
+                  <label>
+                    Capacity
+                    <input name="capacity" type="number" min="1" value="40" required />
+                  </label>
+                </div>
+                <label>
+                  Location
+                  <input name="location" required placeholder="Block, floor, room" />
+                </label>
+                <label>
+                  Features
+                  <input name="features" placeholder="Projector, Audio, AC" />
+                </label>
+                <button class="primary" type="submit">Add resource</button>
+              </form>
+              <div class="status-editor">
+                <label>
+                  Update resource status
+                  <select id="statusResource"></select>
+                </label>
+                <label>
+                  Availability
+                  <select id="statusValue">
+                    <option>Available</option>
+                    <option>Maintenance</option>
+                  </select>
+                </label>
+                <button class="secondary" id="saveStatus" type="button">Save status</button>
+              </div>
+            </section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <script src="app.js"></script>
+  </body>
+</html>

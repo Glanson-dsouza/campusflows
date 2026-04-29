@@ -1,0 +1,1017 @@
+const STORAGE_KEY = "smart-campus-resource-platform-v1";
+const SESSION_KEY = "smart-campus-current-user-v1";
+
+const resourceTypes = ["Classroom", "Lab", "Seminar Hall", "Equipment"];
+const roleRank = { student: 1, faculty: 2, admin: 3 };
+const demoUsers = [
+  { id: "student01", password: "student123", name: "Student User", role: "student", homeView: "resources" },
+  { id: "faculty01", password: "faculty123", name: "Faculty User", role: "faculty", homeView: "dashboard" },
+  { id: "admin01", password: "admin123", name: "Admin User", role: "admin", homeView: "dashboard" }
+];
+
+const seedResources = [
+  { id: "r1", name: "CSE Seminar Hall", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Block A, Floor 2", features: ["Projector", "Audio", "AC"] },
+  { id: "r2", name: "AI & ML Lab", type: "Lab", capacity: 64, availability: "Available", location: "Block C, Floor 1", features: ["GPU Systems", "LAN", "Whiteboard"] },
+  { id: "r3", name: "Classroom B-204", type: "Classroom", capacity: 72, availability: "Available", location: "Block B, Floor 2", features: ["Smart Board", "Projector"] },
+  { id: "r4", name: "Electronics Lab", type: "Lab", capacity: 48, availability: "Maintenance", location: "Block D, Floor 1", features: ["Kits", "Oscilloscopes"] },
+  { id: "r5", name: "Mini Auditorium", type: "Seminar Hall", capacity: 120, availability: "Available", location: "Admin Block", features: ["Stage", "Audio", "Recording"] },
+  { id: "r6", name: "Portable Projector Set", type: "Equipment", capacity: 1, availability: "Available", location: "Media Cell", features: ["HDMI", "VGA", "Speaker"] },
+  { id: "r7", name: "Classroom A-101", type: "Classroom", capacity: 55, availability: "Available", location: "Block A, Floor 1", features: ["Whiteboard", "Projector"] },
+  { id: "r8", name: "Robotics Kit Batch", type: "Equipment", capacity: 12, availability: "Available", location: "Innovation Lab", features: ["Sensors", "Controllers"] }
+];
+
+const today = new Date().toISOString().slice(0, 10);
+
+function offsetDate(days) {
+  const date = new Date(`${today}T00:00:00`);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+const seedBookings = [
+  { id: "b1", resourceId: "r1", requester: "MBA Department", purpose: "Guest lecture", date: today, start: "10:00", end: "12:00", status: "Approved", createdAt: Date.now() - 900000 },
+  { id: "b2", resourceId: "r2", requester: "CSE 6th Sem", purpose: "Cloud lab session", date: today, start: "13:00", end: "15:00", status: "Approved", createdAt: Date.now() - 800000 },
+  { id: "b3", resourceId: "r3", requester: "Placement Cell", purpose: "Aptitude training", date: today, start: "09:00", end: "11:00", status: "Pending", createdAt: Date.now() - 700000 },
+  { id: "b4", resourceId: "r5", requester: "IEEE Student Branch", purpose: "Technical talk", date: today, start: "16:00", end: "18:00", status: "Pending", createdAt: Date.now() - 600000 }
+];
+
+const seedEvents = [
+  { id: "e1", title: "AI Tools for Smart Campuses", type: "Technical", venueResourceId: "r1", date: today, start: "11:30", end: "13:00", organizer: "CSE Department", seats: 120, description: "A campus seminar on practical AI use in academic operations.", registrations: [] },
+  { id: "e2", title: "Cloud Lab Bootcamp", type: "Workshop", venueResourceId: "r2", date: today, start: "14:30", end: "17:00", organizer: "Computer Science Association", seats: 55, description: "Hands-on cloud deployment and monitoring workshop.", registrations: [] },
+  { id: "e3", title: "Placement Readiness Drive", type: "Placement", venueResourceId: "r5", date: offsetDate(1), start: "10:00", end: "16:00", organizer: "Training and Placement Cell", seats: 100, description: "Resume review, aptitude practice, and mock interview rounds.", registrations: [] },
+  { id: "e4", title: "Inter-Department Futsal", type: "Sports", venueName: "Campus Ground", date: offsetDate(2), start: "15:30", end: "18:30", organizer: "Sports Committee", seats: 80, description: "Team registration and spectator entry for the campus futsal event.", registrations: [] },
+  { id: "e5", title: "Ethnic Day Cultural Fest", type: "Cultural", venueName: "Open Air Stage", date: offsetDate(5), start: "09:30", end: "17:30", organizer: "Cultural Club", seats: 300, description: "Cultural performances, showcases, and student-led stalls.", registrations: [] }
+];
+
+let state = loadState();
+state.events ||= cloneData(seedEvents);
+let currentUser = loadSession();
+let filters = {
+  search: "",
+  type: "all",
+  availability: "all",
+  status: "all",
+  trendType: "all",
+  eventTime: "all",
+  eventType: "all",
+  mapType: "all",
+  mapBuilding: "all"
+};
+
+const buildingCoordinates = {
+  "Main Gate": { x: 8, y: 88 },
+  "Block A": { x: 22, y: 24 },
+  "Block B": { x: 52, y: 28 },
+  "Block C": { x: 27, y: 58 },
+  "Block D": { x: 62, y: 58 },
+  "Admin Block": { x: 76, y: 28 },
+  "Media Cell": { x: 82, y: 64 },
+  "Innovation Lab": { x: 45, y: 76 },
+  "Campus Ground": { x: 76, y: 80 }
+};
+
+let activeRoute = {
+  from: "Main Gate",
+  destinationId: null
+};
+
+function loadSession() {
+  const saved = sessionStorage.getItem(SESSION_KEY);
+  if (!saved) return null;
+
+  try {
+    const user = JSON.parse(saved);
+    return demoUsers.find((item) => item.id === user.id) || null;
+  } catch {
+    sessionStorage.removeItem(SESSION_KEY);
+    return null;
+  }
+}
+
+function saveSession(user) {
+  if (user) {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id }));
+  } else {
+    sessionStorage.removeItem(SESSION_KEY);
+  }
+}
+
+function hasRole(minRole) {
+  if (!minRole) return Boolean(currentUser);
+  return Boolean(currentUser) && roleRank[currentUser.role] >= roleRank[minRole];
+}
+
+function canAccessView(viewName) {
+  if (!currentUser) return false;
+  if (viewName === "dashboard") return hasRole("faculty");
+  if (viewName === "admin") return hasRole("admin");
+  return ["resources", "booking", "events", "map"].includes(viewName);
+}
+
+function cloneData(data) {
+  return typeof structuredClone === "function" ? structuredClone(data) : JSON.parse(JSON.stringify(data));
+}
+
+function makeId() {
+  return globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `id-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "").replace(/[&<>"']/g, (char) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    "\"": "&quot;",
+    "'": "&#039;"
+  })[char]);
+}
+
+const views = {
+  dashboard: document.querySelector("#dashboardView"),
+  resources: document.querySelector("#resourcesView"),
+  booking: document.querySelector("#bookingView"),
+  events: document.querySelector("#eventsView"),
+  map: document.querySelector("#mapView"),
+  admin: document.querySelector("#adminView")
+};
+
+const pageTitles = {
+  dashboard: "Dashboard",
+  resources: "Resource Inventory",
+  booking: "Smart Booking",
+  events: "Campus Events",
+  map: "Campus Map",
+  admin: "Monitoring & Approvals"
+};
+
+function loadState() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (saved) {
+    try {
+      return JSON.parse(saved);
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
+    }
+  }
+
+  return {
+    resources: cloneData(seedResources),
+    bookings: cloneData(seedBookings),
+    events: cloneData(seedEvents)
+  };
+}
+
+function saveState() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function minutes(time) {
+  const [hours, mins] = time.split(":").map(Number);
+  return hours * 60 + mins;
+}
+
+function formatDate(date) {
+  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric"
+  });
+}
+
+function overlaps(a, b) {
+  return a.date === b.date && minutes(a.start) < minutes(b.end) && minutes(a.end) > minutes(b.start);
+}
+
+function getResource(resourceId) {
+  return state.resources.find((resource) => resource.id === resourceId);
+}
+
+function approvedBookings(resourceId) {
+  return state.bookings.filter((booking) => booking.resourceId === resourceId && booking.status === "Approved");
+}
+
+function hasConflict(candidate, includePending = false) {
+  return state.bookings.some((booking) => {
+    const sameResource = booking.resourceId === candidate.resourceId;
+    const trackedStatus = includePending ? booking.status !== "Rejected" : booking.status === "Approved";
+    const notSame = booking.id !== candidate.id;
+    return sameResource && trackedStatus && notSame && overlaps(candidate, booking);
+  });
+}
+
+function utilization(resourceId) {
+  const total = approvedBookings(resourceId).reduce((sum, booking) => sum + (minutes(booking.end) - minutes(booking.start)), 0);
+  return Math.min(100, Math.round((total / (8 * 60)) * 100));
+}
+
+function occupancy(resource) {
+  if (resource.availability === "Maintenance") return "Maintenance";
+  const now = new Date();
+  const current = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const active = state.bookings.some((booking) => (
+    booking.resourceId === resource.id &&
+    booking.status === "Approved" &&
+    booking.date === today &&
+    minutes(booking.start) <= minutes(current) &&
+    minutes(booking.end) > minutes(current)
+  ));
+  return active ? "Occupied" : "Available";
+}
+
+function buildingName(resource) {
+  if (resource.location.includes("Block A")) return "Block A";
+  if (resource.location.includes("Block B")) return "Block B";
+  if (resource.location.includes("Block C")) return "Block C";
+  if (resource.location.includes("Block D")) return "Block D";
+  if (resource.location.includes("Admin")) return "Admin Block";
+  if (resource.location.includes("Media")) return "Media Cell";
+  if (resource.location.includes("Innovation")) return "Innovation Lab";
+  if (resource.location.includes("Ground")) return "Campus Ground";
+  return "Admin Block";
+}
+
+function mapPosition(resource, index = 0) {
+  const base = buildingCoordinates[buildingName(resource)] || buildingCoordinates["Admin Block"];
+  const offset = ((index % 5) - 2) * 2.2;
+  return {
+    x: Math.max(5, Math.min(95, base.x + offset)),
+    y: Math.max(8, Math.min(92, base.y + Math.floor(index / 5) * 3))
+  };
+}
+
+function resourceMapPosition(resource) {
+  const building = buildingName(resource);
+  const peers = state.resources.filter((item) => buildingName(item) === building);
+  return mapPosition(resource, peers.findIndex((item) => item.id === resource.id));
+}
+
+function routePointStyle(point) {
+  return `left:${point.x}%; top:${point.y}%;`;
+}
+
+function destinationOptions() {
+  const resourceOptions = state.resources.map((resource) => ({
+    label: `${resource.name} - ${resource.location}`,
+    resource
+  }));
+
+  const placeOptions = Object.keys(buildingCoordinates).map((building) => ({
+    label: building,
+    place: building
+  }));
+
+  return [...resourceOptions, ...placeOptions];
+}
+
+function findDestination(query) {
+  const normalized = query.trim().toLowerCase();
+  if (!normalized) return null;
+
+  const resource = state.resources.find((item) => (
+    item.name.toLowerCase() === normalized ||
+    item.location.toLowerCase() === normalized ||
+    `${item.name} - ${item.location}`.toLowerCase() === normalized
+  )) || state.resources.find((item) => (
+    item.name.toLowerCase().includes(normalized) ||
+    item.location.toLowerCase().includes(normalized)
+  ));
+
+  if (resource) {
+    return { type: "resource", resource };
+  }
+
+  const place = Object.keys(buildingCoordinates).find((building) => building.toLowerCase() === normalized) ||
+    Object.keys(buildingCoordinates).find((building) => building.toLowerCase().includes(normalized));
+
+  return place ? { type: "place", place } : null;
+}
+
+function searchMatchesResource(resource) {
+  const query = filters.search.toLowerCase();
+  return [resource.name, resource.type, resource.location, ...resource.features].join(" ").toLowerCase().includes(query);
+}
+
+function searchMatchesBooking(booking) {
+  const resource = getResource(booking.resourceId);
+  const query = filters.search.toLowerCase();
+  return [resource?.name, booking.requester, booking.purpose, booking.status, booking.date].join(" ").toLowerCase().includes(query);
+}
+
+function eventVenue(event) {
+  const resource = event.venueResourceId ? getResource(event.venueResourceId) : null;
+  return resource ? `${resource.name}, ${resource.location}` : event.venueName;
+}
+
+function eventStatus(event) {
+  if (event.date === today) return "Current";
+  return event.date > today ? "Upcoming" : "Completed";
+}
+
+function eventRegistered(event) {
+  return Boolean(currentUser) && event.registrations.some((item) => item.userId === currentUser.id);
+}
+
+function searchMatchesEvent(event) {
+  const query = filters.search.toLowerCase();
+  return [event.title, event.type, event.organizer, event.description, eventVenue(event), event.date].join(" ").toLowerCase().includes(query);
+}
+
+function renderMetrics() {
+  const total = state.resources.length;
+  const pending = state.bookings.filter((booking) => booking.status === "Pending").length;
+  const conflicts = state.bookings.filter((booking) => booking.status === "Pending" && hasConflict(booking)).length;
+  const avgUtil = Math.round(state.resources.reduce((sum, resource) => sum + utilization(resource.id), 0) / total);
+
+  document.querySelector("#metrics").innerHTML = [
+    ["Resources", total, "Inventory"],
+    ["Pending Requests", pending, "Workflow"],
+    ["Conflict Alerts", conflicts, "Scheduling"],
+    ["Avg. Utilization", `${avgUtil}%`, "Optimization"]
+  ].map(([label, value, tag]) => `
+    <article class="metric">
+      <small>${tag}</small>
+      <strong>${value}</strong>
+      <span>${label}</span>
+    </article>
+  `).join("");
+}
+
+function renderOccupancy() {
+  const resources = state.resources
+    .filter((resource) => filters.trendType === "all" || resource.type === filters.trendType)
+    .filter(searchMatchesResource)
+    .sort((a, b) => utilization(b.id) - utilization(a.id));
+
+  document.querySelector("#occupancyChart").innerHTML = resources.length ? resources.map((resource) => {
+    const used = utilization(resource.id);
+    return `
+      <div class="chart-row">
+        <strong>${escapeHtml(resource.name)}</strong>
+        <div class="progress" aria-label="${resource.name} utilization ${used}%"><span style="width:${used}%"></span></div>
+        <span>${used}%</span>
+      </div>
+    `;
+  }).join("") : `<div class="empty">No resources match the current filters.</div>`;
+}
+
+function renderAlerts() {
+  const pendingConflicts = state.bookings.filter((booking) => booking.status === "Pending" && hasConflict(booking));
+  const underused = state.resources.filter((resource) => utilization(resource.id) < 20 && resource.availability !== "Maintenance").slice(0, 2);
+
+  const alerts = [
+    ...pendingConflicts.map((booking) => {
+      const resource = getResource(booking.resourceId);
+      return `<div class="alert danger"><strong>${escapeHtml(resource.name)}</strong><p>${escapeHtml(booking.requester)} conflicts on ${formatDate(booking.date)}, ${booking.start}-${booking.end}.</p></div>`;
+    }),
+    ...underused.map((resource) => `<div class="alert warn"><strong>${escapeHtml(resource.name)}</strong><p>Low utilization at ${utilization(resource.id)}%. Route smaller bookings here when capacity fits.</p></div>`)
+  ];
+
+  document.querySelector("#conflictAlerts").innerHTML = alerts.length ? alerts.join("") : `<div class="empty">No conflict alerts right now.</div>`;
+}
+
+function renderResources() {
+  const resources = state.resources
+    .filter((resource) => filters.type === "all" || resource.type === filters.type)
+    .filter((resource) => filters.availability === "all" || occupancy(resource) === filters.availability)
+    .filter(searchMatchesResource);
+
+  document.querySelector("#resourceGrid").innerHTML = resources.length ? resources.map((resource) => {
+    const used = utilization(resource.id);
+    const status = occupancy(resource);
+    return `
+      <article class="resource-card">
+        <div class="resource-top">
+          <div>
+            <h2>${escapeHtml(resource.name)}</h2>
+            <p>${escapeHtml(resource.location)}</p>
+          </div>
+          <span class="badge ${status}">${status}</span>
+        </div>
+        <div class="resource-meta">
+          <span class="badge">${escapeHtml(resource.type)}</span>
+          <span class="badge">Capacity ${resource.capacity}</span>
+          ${resource.features.map((feature) => `<span class="badge">${escapeHtml(feature)}</span>`).join("")}
+        </div>
+        <p>Utilization</p>
+        <div class="progress"><span style="width:${used}%"></span></div>
+      </article>
+    `;
+  }).join("") : `<div class="empty">No resources match the current filters.</div>`;
+}
+
+function renderEvents() {
+  const events = state.events
+    .filter((event) => filters.eventType === "all" || event.type === filters.eventType)
+    .filter((event) => {
+      if (filters.eventTime === "current") return eventStatus(event) === "Current";
+      if (filters.eventTime === "upcoming") return eventStatus(event) === "Upcoming";
+      if (filters.eventTime === "registered") return eventRegistered(event);
+      return eventStatus(event) !== "Completed";
+    })
+    .filter(searchMatchesEvent)
+    .sort((a, b) => `${a.date}${a.start}`.localeCompare(`${b.date}${b.start}`));
+
+  document.querySelector("#eventGrid").innerHTML = events.length ? events.map((event) => {
+    const status = eventStatus(event);
+    const registered = eventRegistered(event);
+    const seatsLeft = Math.max(0, event.seats - event.registrations.length);
+    const full = seatsLeft === 0;
+    return `
+      <article class="event-card">
+        <div class="event-media">
+          <span class="badge ${status}">${status}</span>
+          <span>${escapeHtml(event.type)}</span>
+        </div>
+        <div class="event-body">
+          <div class="resource-top">
+            <div>
+              <h2>${escapeHtml(event.title)}</h2>
+              <p>${escapeHtml(event.organizer)}</p>
+            </div>
+            <span class="badge ${registered ? "Approved" : "Pending"}">${registered ? "Registered" : `${seatsLeft} seats`}</span>
+          </div>
+          <p>${escapeHtml(event.description)}</p>
+          <div class="resource-meta">
+            <span class="badge">${formatDate(event.date)}</span>
+            <span class="badge">${event.start}-${event.end}</span>
+            <span class="badge">${escapeHtml(eventVenue(event))}</span>
+          </div>
+          <button class="primary event-register" data-event-id="${event.id}" ${registered || full || status === "Completed" ? "disabled" : ""}>
+            ${registered ? "Already registered" : full ? "Full" : "Apply / Register"}
+          </button>
+        </div>
+      </article>
+    `;
+  }).join("") : `<div class="empty">No campus events match the current filters.</div>`;
+}
+
+function renderMapBuildings() {
+  const select = document.querySelector("#mapBuildingFilter");
+  const current = select.value || "all";
+  const buildings = [...new Set(state.resources.map(buildingName))].sort();
+  select.innerHTML = [
+    `<option value="all">All buildings</option>`,
+    ...buildings.map((building) => `<option value="${escapeHtml(building)}">${escapeHtml(building)}</option>`)
+  ].join("");
+  select.value = buildings.includes(current) ? current : "all";
+}
+
+function renderMapNavigationControls() {
+  const currentSelect = document.querySelector("#currentLocation");
+  const destinations = document.querySelector("#destinationList");
+  const current = currentSelect.value || activeRoute.from;
+  const places = Object.keys(buildingCoordinates);
+
+  currentSelect.innerHTML = places.map((place) => `<option value="${escapeHtml(place)}">${escapeHtml(place)}</option>`).join("");
+  currentSelect.value = places.includes(current) ? current : "Main Gate";
+
+  destinations.innerHTML = destinationOptions()
+    .map((option) => `<option value="${escapeHtml(option.label)}"></option>`)
+    .join("");
+}
+
+function renderRoute() {
+  const fromPoint = buildingCoordinates[activeRoute.from] || buildingCoordinates["Main Gate"];
+  const marker = document.querySelector("#currentMarker");
+  marker.innerHTML = `<div class="current-location" style="${routePointStyle(fromPoint)}"><span>You</span></div>`;
+
+  const routeSvg = document.querySelector("#mapRouteSvg");
+  const notice = document.querySelector("#routeNotice");
+  let destinationPoint = null;
+  let destinationLabel = "";
+
+  if (activeRoute.destinationId?.startsWith("place:")) {
+    destinationLabel = activeRoute.destinationId.replace("place:", "");
+    destinationPoint = buildingCoordinates[destinationLabel];
+  } else if (activeRoute.destinationId) {
+    const resource = getResource(activeRoute.destinationId);
+    if (resource) {
+      destinationPoint = resourceMapPosition(resource);
+      destinationLabel = `${resource.name}, ${resource.location}`;
+    }
+  }
+
+  if (!destinationPoint) {
+    routeSvg.innerHTML = "";
+    notice.textContent = "Choose your current location and search a room or place to navigate.";
+    return;
+  }
+
+  const midX = destinationPoint.x;
+  const midY = fromPoint.y;
+  routeSvg.innerHTML = `
+    <polyline points="${fromPoint.x},${fromPoint.y} ${midX},${midY} ${destinationPoint.x},${destinationPoint.y}" />
+    <circle cx="${destinationPoint.x}" cy="${destinationPoint.y}" r="1.8" />
+  `;
+  notice.textContent = `Route from ${activeRoute.from} to ${destinationLabel}: follow the highlighted path across the central campus road.`;
+}
+
+function renderMap() {
+  renderMapBuildings();
+  renderMapNavigationControls();
+  const resources = state.resources
+    .filter((resource) => filters.mapType === "all" || resource.type === filters.mapType)
+    .filter((resource) => filters.mapBuilding === "all" || buildingName(resource) === filters.mapBuilding)
+    .filter(searchMatchesResource);
+
+  const buildingSeen = {};
+  document.querySelector("#mapPins").innerHTML = resources.map((resource) => {
+    const building = buildingName(resource);
+    const index = buildingSeen[building] || 0;
+    buildingSeen[building] = index + 1;
+    const position = mapPosition(resource, index);
+    const status = occupancy(resource);
+    return `
+      <button class="map-pin ${resource.type.replace(/\s+/g, "-")} ${status}" style="left:${position.x}%; top:${position.y}%;" data-resource-id="${resource.id}" title="${escapeHtml(resource.name)}">
+        <span>${escapeHtml(resource.type.slice(0, 1))}</span>
+      </button>
+    `;
+  }).join("");
+
+  document.querySelector("#mapDetails").innerHTML = resources.length ? resources.map((resource) => {
+    const status = occupancy(resource);
+    return `
+      <button class="map-detail" type="button" data-resource-id="${resource.id}">
+        <strong>${escapeHtml(resource.name)}</strong>
+        <span>${escapeHtml(buildingName(resource))} - ${escapeHtml(resource.location)}</span>
+        <span class="badge ${status}">${status}</span>
+      </button>
+    `;
+  }).join("") : `<div class="empty">No mapped resources match the current filters.</div>`;
+  renderRoute();
+}
+
+function renderBookingOptions() {
+  const typeSelect = document.querySelector("#bookingType");
+  const resourceSelect = document.querySelector("#bookingResource");
+  const selectedType = typeSelect.value || "Classroom";
+
+  typeSelect.innerHTML = resourceTypes.map((type) => `<option ${type === selectedType ? "selected" : ""}>${type}</option>`).join("");
+
+  const resources = state.resources.filter((resource) => resource.type === selectedType);
+  resourceSelect.innerHTML = resources.map((resource) => (
+    `<option value="${resource.id}">${escapeHtml(resource.name)} - capacity ${resource.capacity}</option>`
+  )).join("");
+}
+
+function renderResourceControls() {
+  const typeSelect = document.querySelector("#resourceForm select[name='type']");
+  const statusResource = document.querySelector("#statusResource");
+
+  typeSelect.innerHTML = resourceTypes.map((type) => `<option>${type}</option>`).join("");
+  statusResource.innerHTML = state.resources.map((resource) => (
+    `<option value="${resource.id}">${escapeHtml(resource.name)} - ${escapeHtml(resource.availability)}</option>`
+  )).join("");
+}
+
+function getFormCandidate() {
+  const form = document.querySelector("#bookingForm");
+  const data = new FormData(form);
+  return {
+    resourceId: data.get("resourceId"),
+    requester: data.get("requester")?.trim() || currentUser?.name || "Campus user",
+    purpose: data.get("purpose")?.trim() || "Resource booking",
+    date: data.get("date"),
+    start: data.get("start"),
+    end: data.get("end")
+  };
+}
+
+function findSuggestions(candidate, type, capacity) {
+  const slots = [
+    ["08:00", "09:30"],
+    ["09:30", "11:00"],
+    ["11:00", "12:30"],
+    ["13:00", "14:30"],
+    ["14:30", "16:00"],
+    ["16:00", "17:30"],
+    ["17:30", "19:00"]
+  ];
+
+  const options = [];
+  state.resources
+    .filter((resource) => resource.type === type && resource.capacity >= capacity && resource.availability !== "Maintenance")
+    .forEach((resource) => {
+      const sameSlot = { ...candidate, resourceId: resource.id };
+      if (!hasConflict(sameSlot)) {
+        options.push({ resource, start: candidate.start, end: candidate.end, score: 100 - utilization(resource.id), reason: "Available in requested slot" });
+      }
+
+      slots.forEach(([start, end]) => {
+        const alternative = { ...candidate, resourceId: resource.id, start, end };
+        if (!hasConflict(alternative) && !(start === candidate.start && end === candidate.end)) {
+          options.push({ resource, start, end, score: 90 - utilization(resource.id), reason: "Alternate slot" });
+        }
+      });
+    });
+
+  return options.sort((a, b) => b.score - a.score).slice(0, 5);
+}
+
+function renderSuggestions() {
+  const form = document.querySelector("#bookingForm");
+  const candidate = getFormCandidate();
+  const type = form.elements.type.value;
+  const capacity = Number(form.elements.capacity.value || 1);
+  const target = document.querySelector("#suggestions");
+
+  if (!candidate.date || !candidate.start || !candidate.end) {
+    target.innerHTML = `<div class="empty">Choose date and time to see smart suggestions.</div>`;
+    return;
+  }
+
+  const suggestions = findSuggestions(candidate, type, capacity);
+  target.innerHTML = suggestions.length ? suggestions.map((item) => `
+    <button class="suggestion" type="button" data-resource="${item.resource.id}" data-start="${item.start}" data-end="${item.end}">
+      <strong>${escapeHtml(item.resource.name)}</strong>
+      <p>${item.reason}: ${item.start}-${item.end}. Capacity ${item.resource.capacity}, utilization ${utilization(item.resource.id)}%.</p>
+    </button>
+  `).join("") : `<div class="empty">No matching slots found. Try a different date, type, or capacity.</div>`;
+}
+
+function showNotice(message, isError = false) {
+  const notice = document.querySelector("#bookingNotice");
+  notice.textContent = message;
+  notice.className = `notice show${isError ? " error" : ""}`;
+}
+
+function renderBookings() {
+  const bookings = state.bookings
+    .filter((booking) => filters.status === "all" || booking.status === filters.status)
+    .filter(searchMatchesBooking)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  document.querySelector("#bookingTable").innerHTML = bookings.length ? bookings.map((booking) => {
+    const resource = getResource(booking.resourceId);
+    const conflict = booking.status === "Pending" && hasConflict(booking);
+    return `
+      <tr>
+        <td><strong>${escapeHtml(resource?.name || "Unknown")}</strong><br><span>${escapeHtml(resource?.type || "")}</span></td>
+        <td>${escapeHtml(booking.requester)}<br><span>${escapeHtml(booking.purpose)}</span></td>
+        <td>${formatDate(booking.date)}<br>${booking.start}-${booking.end}</td>
+        <td><span class="badge ${booking.status}">${booking.status}</span>${conflict ? `<br><span class="badge Rejected">Conflict</span>` : ""}</td>
+        <td>
+          <div class="actions">
+            <button class="row-button approve" data-action="approve" data-id="${booking.id}" ${booking.status !== "Pending" || conflict ? "disabled" : ""}>Approve</button>
+            <button class="row-button reject" data-action="reject" data-id="${booking.id}" ${booking.status !== "Pending" ? "disabled" : ""}>Reject</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="5"><div class="empty">No bookings match the current filters.</div></td></tr>`;
+}
+
+function renderAuth() {
+  document.body.classList.toggle("logged-in", Boolean(currentUser));
+
+  if (!currentUser) {
+    return;
+  }
+
+  document.querySelector("#userChip").textContent = `${currentUser.name} - ${currentUser.role}`;
+  document.querySelector("#resetDemo").classList.toggle("hidden", !hasRole("admin"));
+
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    const minRole = item.dataset.minRole;
+    item.classList.toggle("hidden", !hasRole(minRole));
+  });
+
+  const requester = document.querySelector("#bookingForm input[name='requester']");
+  requester.value = currentUser.role === "admin" ? "" : currentUser.name;
+  requester.readOnly = currentUser.role !== "admin";
+
+  const activeView = document.querySelector(".view.active")?.id?.replace("View", "");
+  if (!activeView || !canAccessView(activeView)) {
+    setView(currentUser.homeView);
+  }
+}
+
+function login(userId, password) {
+  const user = demoUsers.find((item) => item.id === userId && item.password === password);
+  if (!user) {
+    const notice = document.querySelector("#loginNotice");
+    notice.textContent = "Invalid login. Use a valid student, faculty, or admin account.";
+    notice.className = "notice show error";
+    return;
+  }
+
+  currentUser = user;
+  saveSession(user);
+  document.querySelector("#loginForm").reset();
+  document.querySelector("#loginNotice").className = "notice";
+  renderAuth();
+  renderAll();
+}
+
+function logout() {
+  currentUser = null;
+  saveSession(null);
+  document.body.classList.remove("logged-in");
+  document.querySelector("#loginNotice").className = "notice";
+}
+
+function renderOptimization() {
+  const resourcesByUse = [...state.resources].sort((a, b) => utilization(a.id) - utilization(b.id));
+  const lowUse = resourcesByUse.filter((resource) => utilization(resource.id) < 25 && resource.availability !== "Maintenance").slice(0, 3);
+  const highUse = resourcesByUse.filter((resource) => utilization(resource.id) > 65).slice(-3);
+  const maintenance = state.resources.filter((resource) => resource.availability === "Maintenance");
+
+  const items = [
+    ...lowUse.map((resource) => `<div class="suggestion"><strong>Route small groups to ${escapeHtml(resource.name)}</strong><p>Current utilization is ${utilization(resource.id)}%, so it is a strong candidate for overflow bookings.</p></div>`),
+    ...highUse.map((resource) => `<div class="suggestion"><strong>Protect peak load for ${escapeHtml(resource.name)}</strong><p>Utilization is ${utilization(resource.id)}%. Prefer alternate resources for non-critical sessions.</p></div>`),
+    ...maintenance.map((resource) => `<div class="suggestion"><strong>Maintenance block: ${escapeHtml(resource.name)}</strong><p>Keep unavailable until facility status is restored.</p></div>`)
+  ];
+
+  document.querySelector("#optimizationReport").innerHTML = items.length ? items.join("") : `<div class="empty">Utilization is balanced across resources.</div>`;
+}
+
+function renderAll() {
+  if (!currentUser) return;
+  renderMetrics();
+  renderOccupancy();
+  renderAlerts();
+  renderResources();
+  renderEvents();
+  renderMap();
+  renderBookingOptions();
+  renderResourceControls();
+  renderSuggestions();
+  renderBookings();
+  renderOptimization();
+}
+
+function setView(viewName) {
+  if (!canAccessView(viewName)) return;
+  Object.entries(views).forEach(([name, view]) => view.classList.toggle("active", name === viewName));
+  document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === viewName));
+  document.querySelector("#pageTitle").textContent = pageTitles[viewName];
+}
+
+function approveBooking(id) {
+  if (!hasRole("admin")) return;
+  const booking = state.bookings.find((item) => item.id === id);
+  if (!booking || hasConflict(booking)) return;
+  booking.status = "Approved";
+  saveState();
+  renderAll();
+}
+
+function rejectBooking(id) {
+  if (!hasRole("admin")) return;
+  const booking = state.bookings.find((item) => item.id === id);
+  if (!booking) return;
+  booking.status = "Rejected";
+  saveState();
+  renderAll();
+}
+
+function registerForEvent(eventId) {
+  if (!hasRole("student")) return;
+  const event = state.events.find((item) => item.id === eventId);
+  if (!event || eventRegistered(event) || event.registrations.length >= event.seats || eventStatus(event) === "Completed") return;
+
+  event.registrations.push({
+    userId: currentUser.id,
+    name: currentUser.name,
+    role: currentUser.role,
+    registeredAt: new Date().toISOString()
+  });
+  saveState();
+  renderEvents();
+}
+
+function wireEvents() {
+  document.querySelector("#loginForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    login(data.get("userId").trim(), data.get("password"));
+  });
+
+  document.querySelector(".demo-users").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-demo-user]");
+    if (!button) return;
+    const user = demoUsers.find((item) => item.id === button.dataset.demoUser);
+    if (user) login(user.id, user.password);
+  });
+
+  document.querySelector("#logoutButton").addEventListener("click", logout);
+
+  document.querySelectorAll(".nav-item").forEach((item) => {
+    item.addEventListener("click", () => setView(item.dataset.view));
+  });
+
+  document.querySelector("#globalSearch").addEventListener("input", (event) => {
+    filters.search = event.target.value.trim();
+    renderAll();
+  });
+
+  document.querySelector("#typeFilters").addEventListener("click", (event) => {
+    if (!event.target.matches("button")) return;
+    filters.type = event.target.dataset.type;
+    document.querySelectorAll("#typeFilters button").forEach((button) => button.classList.toggle("active", button === event.target));
+    renderResources();
+  });
+
+  document.querySelector("#availabilityFilter").addEventListener("change", (event) => {
+    filters.availability = event.target.value;
+    renderResources();
+  });
+
+  document.querySelector("#trendFilter").addEventListener("change", (event) => {
+    filters.trendType = event.target.value;
+    renderOccupancy();
+  });
+
+  document.querySelector("#bookingStatusFilter").addEventListener("change", (event) => {
+    filters.status = event.target.value;
+    renderBookings();
+  });
+
+  document.querySelector("#eventFilters").addEventListener("click", (event) => {
+    if (!event.target.matches("button")) return;
+    filters.eventTime = event.target.dataset.eventFilter;
+    document.querySelectorAll("#eventFilters button").forEach((button) => button.classList.toggle("active", button === event.target));
+    renderEvents();
+  });
+
+  document.querySelector("#eventTypeFilter").addEventListener("change", (event) => {
+    filters.eventType = event.target.value;
+    renderEvents();
+  });
+
+  document.querySelector("#eventGrid").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-event-id]");
+    if (!button) return;
+    registerForEvent(button.dataset.eventId);
+  });
+
+  document.querySelector("#mapTypeFilters").addEventListener("click", (event) => {
+    if (!event.target.matches("button")) return;
+    filters.mapType = event.target.dataset.mapType;
+    document.querySelectorAll("#mapTypeFilters button").forEach((button) => button.classList.toggle("active", button === event.target));
+    renderMap();
+  });
+
+  document.querySelector("#mapBuildingFilter").addEventListener("change", (event) => {
+    filters.mapBuilding = event.target.value;
+    renderMap();
+  });
+
+  document.querySelector("#currentLocation").addEventListener("change", (event) => {
+    activeRoute.from = event.target.value;
+    renderRoute();
+  });
+
+  document.querySelector("#mapSearchForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    activeRoute.from = document.querySelector("#currentLocation").value;
+    const destination = findDestination(document.querySelector("#destinationSearch").value);
+    if (!destination) {
+      document.querySelector("#routeNotice").textContent = "No matching place found. Try a room number, resource name, or building name.";
+      document.querySelector("#mapRouteSvg").innerHTML = "";
+      return;
+    }
+
+    activeRoute.destinationId = destination.type === "resource" ? destination.resource.id : `place:${destination.place}`;
+    renderMap();
+    if (destination.type === "resource") {
+      document.querySelectorAll(".map-pin, .map-detail").forEach((item) => item.classList.toggle("selected", item.dataset.resourceId === destination.resource.id));
+    }
+  });
+
+  document.querySelector("#mapView").addEventListener("click", (event) => {
+    const target = event.target.closest("[data-resource-id]");
+    if (!target) return;
+    const id = target.dataset.resourceId;
+    activeRoute.destinationId = id;
+    document.querySelectorAll(".map-pin, .map-detail").forEach((item) => item.classList.toggle("selected", item.dataset.resourceId === id));
+    renderRoute();
+  });
+
+  document.querySelector("#bookingType").addEventListener("change", () => {
+    renderBookingOptions();
+    renderSuggestions();
+  });
+
+  document.querySelector("#bookingForm").addEventListener("input", renderSuggestions);
+
+  document.querySelector("#bookingForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!hasRole("student")) return;
+    const candidate = getFormCandidate();
+    const form = event.currentTarget;
+
+    if (minutes(candidate.end) <= minutes(candidate.start)) {
+      showNotice("End time must be later than start time.", true);
+      return;
+    }
+
+    const resource = getResource(candidate.resourceId);
+    if (resource.availability === "Maintenance") {
+      showNotice("This resource is under maintenance. Choose another suggested option.", true);
+      return;
+    }
+
+    if (Number(form.elements.capacity.value) > resource.capacity) {
+      showNotice("Selected resource does not meet the required capacity.", true);
+      return;
+    }
+
+    if (hasConflict(candidate)) {
+      showNotice("Conflict detected. Pick one of the suggested alternatives before submitting.", true);
+      return;
+    }
+
+    state.bookings.unshift({
+      id: makeId(),
+      ...candidate,
+      requesterId: currentUser.id,
+      requesterRole: currentUser.role,
+      status: "Pending",
+      createdAt: Date.now()
+    });
+    saveState();
+    form.reset();
+    form.elements.date.value = today;
+    form.elements.start.value = "10:00";
+    form.elements.end.value = "11:00";
+    showNotice("Booking request submitted for admin approval.");
+    renderAuth();
+    renderAll();
+  });
+
+  document.querySelector("#suggestions").addEventListener("click", (event) => {
+    const suggestion = event.target.closest(".suggestion");
+    if (!suggestion) return;
+    const form = document.querySelector("#bookingForm");
+    form.elements.resourceId.value = suggestion.dataset.resource;
+    form.elements.start.value = suggestion.dataset.start;
+    form.elements.end.value = suggestion.dataset.end;
+    showNotice("Suggested resource and slot selected.");
+    renderSuggestions();
+  });
+
+  document.querySelector("#optimizePick").addEventListener("click", () => {
+    const first = document.querySelector("#suggestions .suggestion");
+    if (first) first.click();
+  });
+
+  document.querySelector("#bookingTable").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-action]");
+    if (!button) return;
+    if (button.dataset.action === "approve") approveBooking(button.dataset.id);
+    if (button.dataset.action === "reject") rejectBooking(button.dataset.id);
+  });
+
+  document.querySelector("#resourceForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!hasRole("admin")) return;
+    const data = new FormData(event.currentTarget);
+    const features = String(data.get("features") || "")
+      .split(",")
+      .map((feature) => feature.trim())
+      .filter(Boolean);
+
+    state.resources.push({
+      id: makeId(),
+      name: data.get("name").trim(),
+      type: data.get("type"),
+      capacity: Number(data.get("capacity")),
+      availability: "Available",
+      location: data.get("location").trim(),
+      features
+    });
+
+    saveState();
+    event.currentTarget.reset();
+    renderAll();
+  });
+
+  document.querySelector("#saveStatus").addEventListener("click", () => {
+    if (!hasRole("admin")) return;
+    const resource = getResource(document.querySelector("#statusResource").value);
+    if (!resource) return;
+    resource.availability = document.querySelector("#statusValue").value;
+    saveState();
+    renderAll();
+  });
+
+  document.querySelector("#resetDemo").addEventListener("click", () => {
+    if (!hasRole("admin")) return;
+    state = { resources: cloneData(seedResources), bookings: cloneData(seedBookings), events: cloneData(seedEvents) };
+    saveState();
+    renderAll();
+  });
+}
+
+function init() {
+  const form = document.querySelector("#bookingForm");
+  form.elements.date.value = today;
+  form.elements.start.value = "10:00";
+  form.elements.end.value = "11:00";
+  wireEvents();
+  renderAuth();
+  renderAll();
+}
+
+init();
