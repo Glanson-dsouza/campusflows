@@ -2,7 +2,7 @@ const STORAGE_KEY = "smart-campus-resource-platform-v1";
 const SESSION_KEY = "smart-campus-current-user-v1";
 
 const resourceTypes = ["Classroom", "Lab", "Seminar Hall", "Equipment"];
-const departments = ["CSE", "MBA", "ECE", "CSDS","ISE","CV","AIMl","ME","EEE","MCA"];
+const departments = ["CSE", "MBA", "ECE", "CSDS", "ISE", "CV", "AIMl", "ME", "EEE", "MCA"];
 const roleRank = { student: 1, faculty: 2, admin: 3 };
 const demoUsers = [
   { id: "student01", password: "student123", name: "Student User", role: "student", department: "CSE", homeView: "dashboard" },
@@ -44,10 +44,10 @@ function offsetDate(days) {
 }
 
 const seedBookings = [
-  { id: "b1", resourceId: "r1", requester: "MBA Department", purpose: "Guest lecture", date: today, start: "10:00", end: "12:00", status: "Approved", createdAt: Date.now() - 900000 },
-  { id: "b2", resourceId: "r2", requester: "CSE 6th Sem", purpose: "Cloud lab session", date: today, start: "13:00", end: "15:00", status: "Approved", createdAt: Date.now() - 800000 },
-  { id: "b3", resourceId: "r3", requester: "Placement Cell", purpose: "Aptitude training", date: today, start: "09:00", end: "11:00", status: "Pending", createdAt: Date.now() - 700000 },
-  { id: "b4", resourceId: "r5", requester: "IEEE Student Branch", purpose: "Technical talk", date: today, start: "16:00", end: "18:00", status: "Pending", createdAt: Date.now() - 600000 }
+  { id: "b1", resourceId: "r1", requester: "MBA Department", requesterId: "faculty01", purpose: "Guest lecture", date: today, start: "10:00", end: "12:00", status: "Approved", createdAt: Date.now() - 900000 },
+  { id: "b2", resourceId: "r2", requester: "CSE 6th Sem", requesterId: "faculty01", purpose: "Cloud lab session", date: today, start: "13:00", end: "15:00", status: "Approved", createdAt: Date.now() - 800000 },
+  { id: "b3", resourceId: "r3", requester: "Placement Cell", requesterId: "admin01", purpose: "Aptitude training", date: today, start: "09:00", end: "11:00", status: "Pending", createdAt: Date.now() - 700000 },
+  { id: "b4", resourceId: "r5", requester: "IEEE Student Branch", requesterId: "faculty01", purpose: "Technical talk", date: today, start: "16:00", end: "18:00", status: "Pending", createdAt: Date.now() - 600000 }
 ];
 
 const seedEvents = [
@@ -65,15 +65,9 @@ const seedIoTDevices = [
   { id: "iot4", name: "CSE Lab Fan Controller", deviceType: "Fans", protocol: "LoRaWAN", area: "OS/USP/MF Lab 2718-A", floor: "second", status: "Off", lastSeen: Date.now() - 300000 }
 ];
 
-const seedLibraryBooks = readLibraryBooksFromJson();
-
-let state = loadState();
-syncSeedResourceDetails();
-state.events ||= cloneData(seedEvents);
-state.iotDevices ||= cloneData(seedIoTDevices);
-state.libraryBooks ||= cloneData(seedLibraryBooks);
-syncSeedLibraryBooks();
-let currentUser = loadSession();
+let seedLibraryBooks = [];
+let state;
+let currentUser;
 let filters = {
   search: "",
   type: "all",
@@ -175,6 +169,21 @@ let activeRoute = {
   destinationId: null
 };
 
+async function initializeApp() {
+  seedLibraryBooks = await loadLibraryBooksFromJson();
+
+  state = loadState();
+  syncSeedResourceDetails();
+  state.events ||= cloneData(seedEvents);
+  state.iotDevices ||= cloneData(seedIoTDevices);
+  state.libraryBooks ||= cloneData(seedLibraryBooks);
+  syncSeedLibraryBooks();
+
+  window.state = state; // Global for debugging
+  currentUser = loadSession();
+}
+
+
 function loadSession() {
   const saved = sessionStorage.getItem(SESSION_KEY);
   if (!saved) return null;
@@ -206,6 +215,7 @@ function canAccessView(viewName) {
   if (viewName === "booking") return hasRole("faculty");
   if (viewName === "admin") return hasRole("admin");
   if (viewName === "library") return currentUser.role === "student";
+  if (viewName === "facultyBookings") return hasRole("faculty");
   return ["dashboard", "resources", "events", "map"].includes(viewName);
 }
 
@@ -227,16 +237,15 @@ function escapeHtml(value) {
   })[char]);
 }
 
-function readLibraryBooksFromJson() {
-  const source = document.querySelector("#libraryBookData");
-  if (!source) return [];
-
+async function loadLibraryBooksFromJson() {
   try {
-    const books = JSON.parse(source.textContent);
-    if (!Array.isArray(books)) return [];
+    const response = await fetch('./books.json');
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const books = await response.json();
+    if (!Array.isArray(books)) throw new Error('Invalid JSON array');
     return books.map(normalizeLibraryBook).filter(Boolean);
   } catch (error) {
-    console.warn("Library book JSON could not be parsed.", error);
+    console.warn("Failed to load books.json:", error);
     return [];
   }
 }
@@ -265,7 +274,8 @@ const views = {
   events: document.querySelector("#eventsView"),
   library: document.querySelector("#libraryView"),
   map: document.querySelector("#mapView"),
-  admin: document.querySelector("#adminView")
+  admin: document.querySelector("#adminView"),
+  facultyBookings: document.querySelector("#facultyBookingsView")
 };
 
 const pageTitles = {
@@ -275,7 +285,8 @@ const pageTitles = {
   events: "Campus Events",
   library: "Library",
   map: "Campus Map",
-  admin: "Monitoring & Approvals"
+  admin: "Monitoring & Approvals",
+  facultyBookings: "My Bookings"
 };
 
 function loadState() {
@@ -598,6 +609,18 @@ function bookRegistration(book) {
   return book.registrations?.find((item) => item.userId === currentUser.id);
 }
 
+function markCollected(bookId) {
+  if (!currentUser || currentUser.role !== "student") return;
+  const book = state.libraryBooks.find((item) => item.id === bookId);
+  if (!book) return;
+  const reg = bookRegistration(book);
+  if (!reg || reg.collected) return;
+  reg.collected = true;
+  reg.collectedAt = new Date().toISOString();
+  saveState();
+  renderLibraryBooks();
+}
+
 function availableBookCopies(book) {
   return Math.max(0, book.copies - (book.registrations?.length || 0));
 }
@@ -620,6 +643,27 @@ function returnDateForPickup(pickupDate) {
   return date.toISOString().slice(0, 10);
 }
 
+function getReturnAlerts() {
+  if (!currentUser || currentUser.role !== "student") return [];
+  const todayDate = new Date();
+  const alerts = [];
+  state.libraryBooks.forEach((book) => {
+    const reg = bookRegistration(book);
+    if (reg && reg.collected) {
+      const returnDate = new Date(`${reg.returnDate}T00:00:00`);
+      const diff = (returnDate - todayDate) / (1000 * 60 * 60 * 24);
+      if (diff <= 1) {
+        alerts.push({
+          bookTitle: book.title,
+          returnDate: reg.returnDate,
+          isOverdue: diff < 0
+        });
+      }
+    }
+  });
+  return alerts;
+}
+
 function bookMatchesSearch(book) {
   const query = filters.librarySearch.toLowerCase();
   return [book.title, book.author, book.department, book.shelf].join(" ").toLowerCase().includes(query);
@@ -628,6 +672,28 @@ function bookMatchesSearch(book) {
 function libraryBookHtml(book, showAction = true) {
   const registration = bookRegistration(book);
   const copiesLeft = availableBookCopies(book);
+
+  let actionHtml = "";
+  if (showAction) {
+    actionHtml = `
+      <button class="primary library-register" type="button" data-book-id="${book.id}" ${registration || copiesLeft === 0 ? "disabled" : ""}>
+        ${registration ? "Registered" : copiesLeft === 0 ? "Unavailable" : "Register"}
+      </button>
+    `;
+  } else if (registration && !registration.collected) {
+    const isPickupTime = new Date() >= new Date(`${registration.pickupDate}T${registration.pickupTime}`);
+    actionHtml = `
+      <div class="collect-notice">
+        ${isPickupTime
+        ? `<button class="primary mark-collected" type="button" data-book-id="${book.id}">Mark Collected</button>`
+        : `<span class="badge Pending">Collect after ${registration.pickupTime}</span>`
+      }
+      </div>
+    `;
+  } else if (registration && registration.collected) {
+    actionHtml = `<span class="badge Approved">Collected</span>`;
+  }
+
   return `
     <article class="library-book">
       <div>
@@ -643,11 +709,7 @@ function libraryBookHtml(book, showAction = true) {
           <p>Return by: ${formatDate(registration.returnDate)}, ${registration.returnTime}</p>
         ` : ""}
       </div>
-      ${showAction ? `
-        <button class="primary library-register" type="button" data-book-id="${book.id}" ${registration || copiesLeft === 0 ? "disabled" : ""}>
-          ${registration ? "Registered" : copiesLeft === 0 ? "Unavailable" : "Register"}
-        </button>
-      ` : ""}
+      ${actionHtml}
     </article>
   `;
 }
@@ -674,6 +736,18 @@ function renderLibraryBooks() {
   const exactBook = books.find((book) => book.title.toLowerCase() === query);
   const searchedBooks = query ? (exactBook ? [exactBook] : books.filter(bookMatchesSearch)) : [];
   const registeredBooks = books.filter(bookRegistration);
+  const catalogBooks = query ? searchedBooks.filter(b => !bookRegistration(b)) : [];
+
+  const catalogInstruction = document.querySelector("#libraryCatalogInstruction");
+  const dashboardInstruction = document.querySelector("#libraryDashboardInstruction");
+
+  if (registeredBooks.length > 0) {
+    if (catalogInstruction) catalogInstruction.classList.add("hidden");
+    if (dashboardInstruction) dashboardInstruction.textContent = "Registered books with pickup and return schedule.";
+  } else {
+    if (catalogInstruction) catalogInstruction.classList.remove("hidden");
+    if (dashboardInstruction) dashboardInstruction.textContent = "Your registered books will appear here.";
+  }
 
   if (suggestionsTarget) {
     suggestionsTarget.innerHTML = books.map((book) => `
@@ -689,7 +763,7 @@ function renderLibraryBooks() {
 
   if (catalogTarget) {
     catalogTarget.innerHTML = query
-      ? searchedBooks.length ? searchedBooks.map((book) => libraryBookHtml(book)).join("") : `<div class="empty">No books match your search.</div>`
+      ? catalogBooks.length ? catalogBooks.map((book) => libraryBookHtml(book)).join("") : `<div class="empty">No books match your search or they are already registered.</div>`
       : `<div class="empty">Search and select a book name to register.</div>`;
   }
 }
@@ -714,25 +788,35 @@ function renderOccupancy() {
 
 function renderAlerts() {
   const panel = document.querySelector("#dashboardAlertsPanel");
-  if (panel) panel.classList.toggle("hidden", currentUser?.role === "student");
+  if (panel) panel.classList.toggle("hidden", currentUser?.role === "student" && getReturnAlerts().length === 0);
 
   const target = document.querySelector("#conflictAlerts");
-  if (!target || currentUser?.role === "student") return;
+  if (!target) return;
 
-  const resources = visibleResources();
-  const resourceIds = new Set(resources.map((resource) => resource.id));
-  const pendingConflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking));
-  const underused = resources.filter((resource) => utilization(resource.id) < 20 && resource.availability !== "Maintenance").slice(0, 2);
+  const alerts = [];
 
-  const alerts = [
-    ...pendingConflicts.map((booking) => {
+  if (currentUser?.role !== "student") {
+    const resources = visibleResources();
+    const resourceIds = new Set(resources.map((resource) => resource.id));
+    const pendingConflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking));
+    const underused = resources.filter((resource) => utilization(resource.id) < 20 && resource.availability !== "Maintenance").slice(0, 2);
+
+    alerts.push(...pendingConflicts.map((booking) => {
       const resource = getResource(booking.resourceId);
       return `<div class="alert danger"><strong>${escapeHtml(resource.name)}</strong><p>${escapeHtml(booking.requester)} conflicts on ${formatDate(booking.date)}, ${booking.start}-${booking.end}.</p></div>`;
-    }),
-    ...underused.map((resource) => `<div class="alert warn"><strong>${escapeHtml(resource.name)}</strong><p>Low utilization at ${utilization(resource.id)}%. Route smaller bookings here when capacity fits.</p></div>`)
-  ];
+    }));
+    alerts.push(...underused.map((resource) => `<div class="alert warn"><strong>${escapeHtml(resource.name)}</strong><p>Low utilization at ${utilization(resource.id)}%. Route smaller bookings here when capacity fits.</p></div>`));
+  }
 
-  target.innerHTML = alerts.length ? alerts.join("") : `<div class="empty">No conflict alerts right now.</div>`;
+  const returnAlerts = getReturnAlerts();
+  alerts.push(...returnAlerts.map((alert) => `
+    <div class="alert ${alert.isOverdue ? "danger" : "warn"} overdue-alert">
+      <strong>${escapeHtml(alert.bookTitle)}</strong>
+      <p>${alert.isOverdue ? "OVERDUE!" : "Return tomorrow!"} Due: ${formatDate(alert.returnDate)}</p>
+    </div>
+  `));
+
+  target.innerHTML = alerts.length ? alerts.join("") : `<div class="empty">No alerts right now.</div>`;
 }
 
 function renderResources() {
@@ -1051,6 +1135,73 @@ function autoClassroomDecision(candidate, resource, requestedCapacity) {
   return { status: "Approved", reason: "classroom is available" };
 }
 
+function renderFacultyBookings() {
+  if (!hasRole("faculty")) return;
+  const target = document.querySelector("#facultyBookingTable");
+  if (!target) return;
+
+  const bookings = state.bookings
+    .filter((booking) => booking.requesterId === currentUser.id)
+    .sort((a, b) => b.createdAt - a.createdAt);
+
+  target.innerHTML = bookings.length ? bookings.map((booking) => {
+    const resource = getResource(booking.resourceId);
+    return `
+      <tr>
+        <td><strong>${escapeHtml(resource?.name || "Unknown")}</strong><br><span>${escapeHtml(resource?.type || "")}</span></td>
+        <td>${escapeHtml(booking.purpose)}</td>
+        <td>${formatDate(booking.date)}<br>${booking.start}-${booking.end}</td>
+        <td><span class="badge ${booking.status}">${booking.status}</span></td>
+        <td>
+          <div class="actions">
+            <button class="row-button" data-faculty-action="reschedule" data-id="${booking.id}">Reschedule</button>
+            <button class="row-button reject" data-faculty-action="cancel" data-id="${booking.id}">Cancel</button>
+          </div>
+        </td>
+      </tr>
+    `;
+  }).join("") : `<tr><td colspan="5"><div class="empty">You haven't requested any resources yet.</div></td></tr>`;
+}
+
+function cancelBooking(id) {
+  const index = state.bookings.findIndex((item) => item.id === id);
+  if (index === -1) return;
+  const booking = state.bookings[index];
+
+  // Safety check: Ensure the user owns this booking or is an admin
+  if (!currentUser || (booking.requesterId !== currentUser.id && !hasRole("admin"))) {
+    console.warn("Unauthorized cancellation attempt");
+    return;
+  }
+
+  state.bookings.splice(index, 1);
+  saveState();
+  renderAll();
+}
+
+function rescheduleBooking(id) {
+  const booking = state.bookings.find((item) => item.id === id);
+  if (!booking) return;
+
+  const form = document.querySelector("#bookingForm");
+  const resource = getResource(booking.resourceId);
+
+  form.elements.type.value = resource?.type || "Classroom";
+  renderBookingOptions();
+
+  form.elements.resourceId.value = booking.resourceId;
+  form.elements.purpose.value = booking.purpose;
+  form.elements.date.value = booking.date;
+  form.elements.start.value = booking.start;
+  form.elements.end.value = booking.end;
+
+  // Cancel the old one first
+  cancelBooking(id);
+
+  setView("booking");
+  showNotice("Previous booking removed. Update details and submit to reallocate.");
+}
+
 function renderBookings() {
   const resourceIds = new Set(visibleResources().map((resource) => resource.id));
   const bookings = state.bookings
@@ -1212,6 +1363,7 @@ function renderAll() {
   renderResourceControls();
   renderSuggestions();
   renderBookings();
+  renderFacultyBookings();
   renderOptimization();
   renderIoTDevices();
 }
@@ -1326,10 +1478,15 @@ function wireEvents() {
     registerForEvent(button.dataset.eventId);
   });
 
-  document.querySelector("#libraryCatalog").addEventListener("click", (event) => {
+  const handleLibraryAction = (event) => {
     const button = event.target.closest("button[data-book-id]");
     if (!button || currentUser?.role !== "student") return;
-    const book = state.libraryBooks.find((item) => item.id === button.dataset.bookId);
+    const bookId = button.dataset.bookId;
+    if (button.classList.contains("mark-collected")) {
+      markCollected(bookId);
+      return;
+    }
+    const book = state.libraryBooks.find((item) => item.id === bookId);
     if (!book || !canAccessBook(book) || bookRegistration(book) || availableBookCopies(book) === 0) return;
 
     const slot = allocatePickupSlot();
@@ -1342,11 +1499,17 @@ function wireEvents() {
       pickupTime: slot.time,
       returnDate: returnDateForPickup(slot.date),
       returnTime: "17:00",
+      collected: false,
       registeredAt: new Date().toISOString()
     });
     saveState();
     renderLibraryBooks();
-  });
+    alert(`Book registered! Collect from library on ${formatDate(slot.date)} at ${slot.time}. Return by ${formatDate(returnDateForPickup(slot.date))}.`);
+  };
+
+  document.querySelector("#libraryCatalog").addEventListener("click", handleLibraryAction);
+  document.querySelector("#studentLibraryBooks").addEventListener("click", handleLibraryAction);
+
 
   document.querySelector("#librarySearch").addEventListener("input", (event) => {
     filters.librarySearch = event.target.value.trim();
@@ -1509,6 +1672,23 @@ function wireEvents() {
     if (button.dataset.action === "reject") rejectBooking(button.dataset.id);
   });
 
+  // Using body-level delegation for faculty actions to ensure they work regardless of view state
+  document.body.addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-faculty-action]");
+    if (!button) return;
+
+    const id = button.dataset.id;
+
+
+    const action = button.dataset.facultyAction;
+
+    if (action === "cancel") {
+      cancelBooking(id);
+    } else if (action === "reschedule") {
+      rescheduleBooking(id);
+    }
+  });
+
   document.querySelector("#resourceForm").addEventListener("submit", (event) => {
     event.preventDefault();
     if (!hasRole("admin")) return;
@@ -1598,14 +1778,24 @@ function wireEvents() {
   });
 }
 
-function init() {
+let initialized = false;
+async function init() {
+  if (initialized) return;
+  initialized = true;
+
+  await initializeApp();
+
   const form = document.querySelector("#bookingForm");
-  form.elements.date.value = today;
-  form.elements.start.value = "10:00";
-  form.elements.end.value = "11:00";
+  if (form) {
+    form.elements.date.value = today;
+    form.elements.start.value = "10:00";
+    form.elements.end.value = "11:00";
+  }
   wireEvents();
   renderAuth();
   renderAll();
 }
 
+window.addEventListener('load', init);
 init();
+

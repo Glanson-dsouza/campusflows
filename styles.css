@@ -1037,3 +1037,19 @@ th {
     min-width: 100%;
   }
 }
+.collect-notice {
+  margin-top: 8px;
+}
+
+.mark-collected {
+  width: 100%;
+}
+
+.overdue-alert {
+  border-left-width: 6px;
+}
+
+.overdue-alert p {
+  margin-top: 4px;
+  font-weight: 800;
+}
