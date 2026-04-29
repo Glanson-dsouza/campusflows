@@ -5,8 +5,8 @@ const resourceTypes = ["Classroom", "Lab", "Seminar Hall", "Equipment"];
 const departments = ["CSE", "MBA", "ECE", "CSDS","ISE","CV","AIMl","ME","EEE","MCA"];
 const roleRank = { student: 1, faculty: 2, admin: 3 };
 const demoUsers = [
-  { id: "student01", password: "student123", name: "Student User", role: "student", department: "CSE", homeView: "dashboard" },
-  { id: "faculty01", password: "faculty123", name: "Faculty User", role: "faculty", department: "MBA", homeView: "dashboard" },
+  { id: "student01", password: "student123", name: "Student User", role: "student", usn: "1PI23CS001", section: "A", department: "CSE", homeView: "dashboard" },
+  { id: "faculty01", password: "faculty123", name: "Faculty User", role: "faculty", essn: "ESSN001", department: "MBA", homeView: "dashboard" },
   { id: "admin01", password: "admin123", name: "Admin User", role: "admin", department: "Administration", homeView: "dashboard" }
 ];
 
@@ -79,6 +79,8 @@ syncSeedResourceDetails();
 state.events ||= cloneData(seedEvents);
 state.iotDevices ||= cloneData(seedIoTDevices);
 state.libraryBooks ||= cloneData(seedLibraryBooks);
+state.users = normalizeUsers(state.users);
+saveState();
 let currentUser = loadSession();
 let filters = {
   search: "",
@@ -181,13 +183,74 @@ let activeRoute = {
   destinationId: null
 };
 
+function defaultState() {
+  return {
+    resources: cloneData(seedResources),
+    bookings: cloneData(seedBookings),
+    events: cloneData(seedEvents),
+    iotDevices: cloneData(seedIoTDevices),
+    libraryBooks: cloneData(seedLibraryBooks),
+    users: cloneData(demoUsers)
+  };
+}
+
+function normalizeUsers(users = []) {
+  const userMap = new Map();
+  const sourceUsers = Array.isArray(users) ? users : [];
+
+  demoUsers.forEach((user) => {
+    userMap.set(user.id.toLowerCase(), { ...cloneData(user), id: user.id.trim() });
+  });
+
+  sourceUsers.forEach((user) => {
+    if (!user?.id || !user?.password || !user?.role) return;
+    const id = String(user.id).trim();
+    if (!id) return;
+    userMap.set(id.toLowerCase(), {
+      ...user,
+      id,
+      name: String(user.name || id).trim(),
+      role: user.role,
+      department: user.department || "Common",
+      homeView: user.homeView || "dashboard"
+    });
+  });
+
+  return [...userMap.values()];
+}
+
+function registeredUsers() {
+  state.users ||= normalizeUsers();
+  return state.users;
+}
+
+function findRegisteredUser(userId) {
+  const normalizedId = String(userId || "").trim().toLowerCase();
+  if (!normalizedId) return null;
+
+  return registeredUsers().find((user) => (
+    user.id.toLowerCase() === normalizedId ||
+    user.usn?.toLowerCase() === normalizedId ||
+    user.essn?.toLowerCase() === normalizedId
+  )) || null;
+}
+
+function makeSessionToken() {
+  return globalThis.crypto?.randomUUID ? globalThis.crypto.randomUUID() : `session-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
 function loadSession() {
   const saved = sessionStorage.getItem(SESSION_KEY);
   if (!saved) return null;
 
   try {
     const user = JSON.parse(saved);
-    return demoUsers.find((item) => item.id === user.id) || null;
+    const registeredUser = findRegisteredUser(user.id);
+    if (!registeredUser || !user.token || registeredUser.sessionToken !== user.token) {
+      sessionStorage.removeItem(SESSION_KEY);
+      return null;
+    }
+    return registeredUser;
   } catch {
     sessionStorage.removeItem(SESSION_KEY);
     return null;
@@ -196,7 +259,9 @@ function loadSession() {
 
 function saveSession(user) {
   if (user) {
-    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id }));
+    user.sessionToken = makeSessionToken();
+    saveState();
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify({ id: user.id, token: user.sessionToken }));
   } else {
     sessionStorage.removeItem(SESSION_KEY);
   }
@@ -263,13 +328,7 @@ function loadState() {
     }
   }
 
-  return {
-    resources: cloneData(seedResources),
-    bookings: cloneData(seedBookings),
-    events: cloneData(seedEvents),
-    iotDevices: cloneData(seedIoTDevices),
-    libraryBooks: cloneData(seedLibraryBooks)
-  };
+  return defaultState();
 }
 
 function syncSeedResourceDetails() {
@@ -1018,6 +1077,120 @@ function renderBookings() {
   }).join("") : `<tr><td colspan="5"><div class="empty">No bookings match the current filters.</div></td></tr>`;
 }
 
+function roleLabel(role) {
+  return role ? `${role.charAt(0).toUpperCase()}${role.slice(1)}` : "User";
+}
+
+function userIdentifier(user) {
+  if (user.role === "student") return `USN ${user.usn || user.id}`;
+  if (user.role === "faculty") return `ESSN ${user.essn || user.id}`;
+  return user.id;
+}
+
+function userDepartmentText(user) {
+  if (user.role === "student") {
+    return `${user.department}${user.section ? `-${user.section}` : ""}`;
+  }
+  return user.department;
+}
+
+function renderRegisterDepartments() {
+  const select = document.querySelector("#register-department");
+  if (!select) return;
+
+  select.innerHTML = departments.map((department) => (
+    `<option value="${escapeHtml(department)}">${escapeHtml(department)}</option>`
+  )).join("");
+}
+
+function updateRegisterFields() {
+  const role = document.querySelector("#register-role")?.value || "student";
+  const isStudent = role === "student";
+  const idLabel = document.querySelector("#registerUserIdLabel");
+  const nameLabel = document.querySelector("#registerNameLabel");
+  const idInput = document.querySelector("#register-userId");
+  const sectionField = document.querySelector("#registerSectionField");
+  const sectionInput = document.querySelector("#register-section");
+
+  if (idLabel) idLabel.textContent = isStudent ? "USN" : "ESSN";
+  if (nameLabel) nameLabel.textContent = isStudent ? "Name of student" : "Name of faculty";
+  if (idInput) idInput.placeholder = isStudent ? "1PI23CS001" : "ESSN001";
+  if (sectionField) sectionField.classList.toggle("hidden", !isStudent);
+  if (sectionInput) sectionInput.required = isStudent;
+}
+
+function setAuthMode(mode) {
+  const isRegister = mode === "register";
+  document.querySelector("#loginForm")?.classList.toggle("hidden", isRegister);
+  document.querySelector("#registerForm")?.classList.toggle("hidden", !isRegister);
+  document.querySelectorAll("[data-auth-mode]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.authMode === mode);
+  });
+  document.querySelector("#loginNotice").className = "notice";
+  document.querySelector("#registerNotice").className = "notice";
+}
+
+function showRegisterNotice(message, isError = false) {
+  const notice = document.querySelector("#registerNotice");
+  notice.textContent = message;
+  notice.className = `notice show${isError ? " error" : ""}`;
+}
+
+function registerUser(form) {
+  const data = new FormData(form);
+  const role = data.get("role");
+  const id = String(data.get("userId") || "").trim();
+  const name = String(data.get("name") || "").trim();
+  const department = data.get("department");
+  const section = String(data.get("section") || "").trim().toUpperCase();
+  const password = String(data.get("password") || "");
+  const confirmPassword = String(data.get("confirmPassword") || "");
+
+  if (!["student", "faculty"].includes(role)) {
+    showRegisterNotice("Choose student or faculty account type.", true);
+    return;
+  }
+
+  if (findRegisteredUser(id)) {
+    showRegisterNotice("This USN, ESSN, or user ID is already registered.", true);
+    return;
+  }
+
+  if (role === "student" && !section) {
+    showRegisterNotice("Section is required for student registration.", true);
+    return;
+  }
+
+  if (password.length < 4) {
+    showRegisterNotice("Password must be at least 4 characters.", true);
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    showRegisterNotice("Passwords do not match.", true);
+    return;
+  }
+
+  const user = {
+    id,
+    password,
+    name,
+    role,
+    department,
+    homeView: "dashboard",
+    ...(role === "student" ? { usn: id, section } : { essn: id })
+  };
+
+  state.users.push(user);
+  saveState();
+  currentUser = user;
+  saveSession(user);
+  form.reset();
+  updateRegisterFields();
+  renderAuth();
+  renderAll();
+}
+
 function renderAuth() {
   document.body.classList.toggle("logged-in", Boolean(currentUser));
 
@@ -1025,7 +1198,7 @@ function renderAuth() {
     return;
   }
 
-  document.querySelector("#userChip").textContent = `${currentUser.name} - ${currentUser.role} - ${currentUser.department}`;
+  document.querySelector("#userChip").textContent = `${currentUser.name} - ${roleLabel(currentUser.role)} - ${userIdentifier(currentUser)} - ${userDepartmentText(currentUser)}`;
   document.querySelector("#resetDemo").classList.toggle("hidden", !hasRole("admin"));
 
   document.querySelectorAll(".nav-item").forEach((item) => {
@@ -1057,15 +1230,15 @@ function login(userId, password) {
 
   // Small delay for UX feel
   setTimeout(() => {
-    const user = demoUsers.find((item) => item.id === userId && item.password === password);
+    const user = findRegisteredUser(userId);
 
     // Restore button
     if (submitText) submitText.style.display = "";
     if (submitSpinner) submitSpinner.style.display = "none";
     if (submitBtn) submitBtn.disabled = false;
 
-    if (!user) {
-      notice.textContent = "Invalid credentials. Use a valid student, faculty, or admin account.";
+    if (!user || user.password !== password) {
+      notice.textContent = "Invalid credentials. Register first, then sign in with your USN, ESSN, or user ID.";
       notice.className = "notice show error login-shake";
       setTimeout(() => notice.classList.remove("login-shake"), 400);
       return;
@@ -1081,6 +1254,10 @@ function login(userId, password) {
 }
 
 function logout() {
+  if (currentUser) {
+    currentUser.sessionToken = null;
+    saveState();
+  }
   currentUser = null;
   saveSession(null);
   document.body.classList.remove("logged-in");
@@ -1215,17 +1392,36 @@ function registerForEvent(eventId) {
 }
 
 function wireEvents() {
+  document.querySelector(".auth-tabs").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-auth-mode]");
+    if (!button) return;
+    setAuthMode(button.dataset.authMode);
+  });
+
   document.querySelector("#loginForm").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
     login(data.get("userId").trim(), data.get("password"));
   });
 
+  document.querySelector("#register-role").addEventListener("change", updateRegisterFields);
+
+  document.querySelector("#registerForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    registerUser(event.currentTarget);
+  });
+
   document.querySelector(".demo-users").addEventListener("click", (event) => {
     const button = event.target.closest("button[data-demo-user]");
     if (!button) return;
-    const user = demoUsers.find((item) => item.id === button.dataset.demoUser);
-    if (user) login(user.id, user.password);
+    const user = findRegisteredUser(button.dataset.demoUser);
+    if (!user) return;
+    setAuthMode("login");
+    document.querySelector("#login-userId").value = user.id;
+    document.querySelector("#login-password").value = user.password;
+    const notice = document.querySelector("#loginNotice");
+    notice.textContent = "Sample registered account filled. Select Sign In to continue.";
+    notice.className = "notice show";
   });
 
   // Password visibility toggle
@@ -1590,9 +1786,13 @@ function wireEvents() {
 
   document.querySelector("#resetDemo").addEventListener("click", () => {
     if (!hasRole("admin")) return;
-    state = { resources: cloneData(seedResources), bookings: cloneData(seedBookings), events: cloneData(seedEvents), iotDevices: cloneData(seedIoTDevices), libraryBooks: cloneData(seedLibraryBooks) };
+    const activeUserId = currentUser.id;
+    state = defaultState();
     syncSeedResourceDetails();
+    currentUser = findRegisteredUser(activeUserId);
+    saveSession(currentUser);
     saveState();
+    renderAuth();
     renderAll();
   });
 }
@@ -1602,6 +1802,8 @@ function init() {
   form.elements.date.value = today;
   form.elements.start.value = "10:00";
   form.elements.end.value = "11:00";
+  renderRegisterDepartments();
+  updateRegisterFields();
   wireEvents();
   renderAuth();
   renderAll();

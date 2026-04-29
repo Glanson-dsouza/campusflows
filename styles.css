@@ -68,6 +68,8 @@ button:disabled {
   display: grid;
   gap: 24px;
   width: min(480px, 100%);
+  max-height: calc(100vh - 48px);
+  overflow: auto;
   padding: 36px 32px;
   border-radius: 16px;
   background: var(--surface);
@@ -117,6 +119,37 @@ button:disabled {
   animation: loginFadeUp 0.6s 0.1s ease both;
 }
 
+.auth-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  padding: 4px;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.auth-tabs button {
+  min-height: 40px;
+  border: 0;
+  border-radius: 8px;
+  color: var(--muted);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.auth-tabs button.active {
+  color: #fff;
+  background: #14202e;
+  box-shadow: 0 8px 18px rgba(20, 32, 46, 0.16);
+}
+
+.login-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
 .login-field {
   display: grid;
   gap: 7px;
@@ -134,7 +167,8 @@ button:disabled {
   position: relative;
 }
 
-.login-input-wrap input {
+.login-input-wrap input,
+.login-input-wrap select {
   width: 100%;
   padding: 14px 48px 14px 16px;
   border: 1.5px solid var(--line);
@@ -146,13 +180,23 @@ button:disabled {
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
-.login-input-wrap input:hover {
+.login-input-wrap input:hover,
+.login-input-wrap select:hover {
   border-color: #b0bec5;
 }
 
-.login-input-wrap input:focus {
+.login-input-wrap input:focus,
+.login-input-wrap select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(23, 109, 117, 0.12);
+}
+
+.login-input-wrap select {
+  appearance: none;
+  background:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%) calc(100% - 20px) 50% / 6px 6px no-repeat,
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%) calc(100% - 14px) 50% / 6px 6px no-repeat,
+    var(--surface);
 }
 
 .login-input-icon {
@@ -1186,6 +1230,7 @@ th {
   .content-grid,
   .booking-layout,
   .map-layout,
+  .login-grid,
   .form-row {
     grid-template-columns: 1fr;
   }
