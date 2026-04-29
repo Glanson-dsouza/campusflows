@@ -253,6 +253,13 @@
 
         <section class="view" id="mapView">
           <div class="toolbar">
+            <div class="segmented" id="mapFloorFilters" aria-label="Map floor filter">
+              <button data-map-floor="ground">Ground</button>
+              <button data-map-floor="first">First</button>
+              <button class="active" data-map-floor="second">Second</button>
+              <button data-map-floor="third">Third</button>
+              <button data-map-floor="fourth">Fourth</button>
+            </div>
             <div class="segmented" id="mapTypeFilters" aria-label="Map resource type filter">
               <button class="active" data-map-type="all">All</button>
               <button data-map-type="Classroom">Classroom</button>
@@ -271,24 +278,15 @@
             </label>
             <label>
               Search destination
-              <input id="destinationSearch" list="destinationList" placeholder="Classroom B-204, AI & ML Lab, Block A..." required />
+              <input id="destinationSearch" list="destinationList" placeholder="Classroom 2701, Library 4F10-A, Ground Floor Seminar Hall..." required />
               <datalist id="destinationList"></datalist>
             </label>
             <button class="primary" type="submit">Navigate</button>
           </form>
           <div class="map-layout">
             <section class="campus-map" aria-label="Campus resource location map">
+              <img class="floor-plan-image" id="floorPlanImage" src="assets/floor-2.jpg" alt="Second floor plan" />
               <svg class="map-route" id="mapRouteSvg" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"></svg>
-              <div class="map-road horizontal"></div>
-              <div class="map-road vertical"></div>
-              <div class="map-zone zone-a">Block A</div>
-              <div class="map-zone zone-b">Block B</div>
-              <div class="map-zone zone-c">Block C</div>
-              <div class="map-zone zone-d">Block D</div>
-              <div class="map-zone zone-admin">Admin Block</div>
-              <div class="map-zone zone-ground">Campus Ground</div>
-              <div class="map-zone zone-media">Media Cell</div>
-              <div class="map-zone zone-innovation">Innovation Lab</div>
               <div id="currentMarker"></div>
               <div id="mapPins"></div>
             </section>
@@ -296,10 +294,10 @@
               <div class="panel-header">
                 <div>
                   <h2>Location Details</h2>
-                  <p>Classrooms, labs, halls, and shared resources by campus area.</p>
+                  <p>Second-floor rooms matched to the floor plan.</p>
                 </div>
               </div>
-              <div class="notice show route-notice" id="routeNotice">Choose your current location and search a room or place to navigate.</div>
+              <div class="notice show route-notice" id="routeNotice">Choose your current location and search a room to navigate.</div>
               <div class="stack" id="mapDetails"></div>
             </section>
           </div>

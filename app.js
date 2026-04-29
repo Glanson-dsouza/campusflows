@@ -10,14 +10,28 @@ const demoUsers = [
 ];
 
 const seedResources = [
-  { id: "r1", name: "CSE Seminar Hall", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Block A, Floor 2", features: ["Projector", "Audio", "AC"] },
-  { id: "r2", name: "AI & ML Lab", type: "Lab", capacity: 64, availability: "Available", location: "Block C, Floor 1", features: ["GPU Systems", "LAN", "Whiteboard"] },
-  { id: "r3", name: "Classroom B-204", type: "Classroom", capacity: 72, availability: "Available", location: "Block B, Floor 2", features: ["Smart Board", "Projector"] },
-  { id: "r4", name: "Electronics Lab", type: "Lab", capacity: 48, availability: "Maintenance", location: "Block D, Floor 1", features: ["Kits", "Oscilloscopes"] },
-  { id: "r5", name: "Mini Auditorium", type: "Seminar Hall", capacity: 120, availability: "Available", location: "Admin Block", features: ["Stage", "Audio", "Recording"] },
-  { id: "r6", name: "Portable Projector Set", type: "Equipment", capacity: 1, availability: "Available", location: "Media Cell", features: ["HDMI", "VGA", "Speaker"] },
-  { id: "r7", name: "Classroom A-101", type: "Classroom", capacity: 55, availability: "Available", location: "Block A, Floor 1", features: ["Whiteboard", "Projector"] },
-  { id: "r8", name: "Robotics Kit Batch", type: "Equipment", capacity: 12, availability: "Available", location: "Innovation Lab", features: ["Sensors", "Controllers"] }
+  { id: "rg1", name: "Ground Floor Seminar Hall", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Ground Floor, West Wing", floor: "ground", features: ["Projector", "Audio", "AC"] },
+  { id: "rg2", name: "Ground Floor Library", type: "Lab", capacity: 80, availability: "Available", location: "Ground Floor, East Wing", floor: "ground", features: ["Systems", "Study Area"] },
+  { id: "rg3", name: "Ground Floor Class Room", type: "Classroom", capacity: 70, availability: "Available", location: "Ground Floor, South Wing", floor: "ground", features: ["Whiteboard", "Projector"] },
+  { id: "r101", name: "Classroom 1F West", type: "Classroom", capacity: 70, availability: "Available", location: "First Floor, West Wing", floor: "first", features: ["Whiteboard", "Projector"] },
+  { id: "r102", name: "First Floor Computer Lab", type: "Lab", capacity: 80, availability: "Available", location: "First Floor, East Wing", floor: "first", features: ["Systems", "LAN"] },
+  { id: "r103", name: "First Floor Seminar Hall", type: "Seminar Hall", capacity: 140, availability: "Available", location: "First Floor, South Centre", floor: "first", features: ["Projector", "Audio"] },
+  { id: "r1", name: "Seminar Hall 2716", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Second Floor, South Centre", features: ["Projector", "Audio", "AC"] },
+  { id: "r2", name: "OS/USP/MF Lab 2718-A", type: "Lab", capacity: 64, availability: "Available", location: "Second Floor, Centre Wing", features: ["Systems", "LAN", "Whiteboard"] },
+  { id: "r3", name: "Classroom 2701", type: "Classroom", capacity: 72, availability: "Available", location: "Second Floor, North East Wing", features: ["Smart Board", "Projector"] },
+  { id: "r4", name: "Network Lab 2710-B", type: "Lab", capacity: 48, availability: "Maintenance", location: "Second Floor, South East Wing", features: ["Kits", "LAN"] },
+  { id: "r5", name: "Tutorial Room 2718", type: "Seminar Hall", capacity: 120, availability: "Available", location: "Second Floor, Centre", features: ["Projector", "Discussion Seating"] },
+  { id: "r6", name: "Store Room 2715", type: "Equipment", capacity: 1, availability: "Available", location: "Second Floor, South Centre", features: ["Projector Set", "Shared Equipment"] },
+  { id: "r7", name: "Classroom 2729", type: "Classroom", capacity: 55, availability: "Available", location: "Second Floor, North West Wing", features: ["Whiteboard", "Projector"] },
+  { id: "r8", name: "Department Lab 2714", type: "Equipment", capacity: 12, availability: "Available", location: "Second Floor, South Centre", features: ["Sensors", "Controllers"] },
+  { id: "r301", name: "Third Floor Classroom", type: "Classroom", capacity: 70, availability: "Available", location: "Third Floor, North Wing", floor: "third", features: ["Whiteboard", "Projector"] },
+  { id: "r302", name: "Third Floor Lab", type: "Lab", capacity: 60, availability: "Available", location: "Third Floor, East Wing", floor: "third", features: ["Systems", "LAN"] },
+  { id: "r303", name: "Third Floor Tutorial Room", type: "Seminar Hall", capacity: 90, availability: "Available", location: "Third Floor, West Wing", floor: "third", features: ["Discussion Seating"] },
+  { id: "r401", name: "Library 4F10-A", type: "Lab", capacity: 120, availability: "Available", location: "Fourth Floor, Centre Wing", floor: "fourth", features: ["Reading Area", "Systems"] },
+  { id: "r402", name: "Computer Lab MBA", type: "Lab", capacity: 70, availability: "Available", location: "Fourth Floor, East Centre", floor: "fourth", features: ["Systems", "LAN"] },
+  { id: "r403", name: "Classroom MBA 4F01", type: "Classroom", capacity: 72, availability: "Available", location: "Fourth Floor, North East Wing", floor: "fourth", features: ["Whiteboard", "Projector"] },
+  { id: "r404", name: "D.B.M.S Lab B.E", type: "Lab", capacity: 64, availability: "Available", location: "Fourth Floor, South West Wing", floor: "fourth", features: ["Database Systems", "LAN"] },
+  { id: "r405", name: "Activity Room MBA", type: "Seminar Hall", capacity: 100, availability: "Available", location: "Fourth Floor, South East Wing", floor: "fourth", features: ["Projector", "Open Seating"] }
 ];
 
 const today = new Date().toISOString().slice(0, 10);
@@ -44,6 +58,7 @@ const seedEvents = [
 ];
 
 let state = loadState();
+syncSeedResourceDetails();
 state.events ||= cloneData(seedEvents);
 let currentUser = loadSession();
 let filters = {
@@ -55,23 +70,93 @@ let filters = {
   eventTime: "all",
   eventType: "all",
   mapType: "all",
+  mapFloor: "second",
   mapBuilding: "all"
 };
 
-const buildingCoordinates = {
-  "Main Gate": { x: 8, y: 88 },
-  "Block A": { x: 22, y: 24 },
-  "Block B": { x: 52, y: 28 },
-  "Block C": { x: 27, y: 58 },
-  "Block D": { x: 62, y: 58 },
-  "Admin Block": { x: 76, y: 28 },
-  "Media Cell": { x: 82, y: 64 },
-  "Innovation Lab": { x: 45, y: 76 },
-  "Campus Ground": { x: 76, y: 80 }
+const floorPlans = {
+  ground: {
+    label: "Ground Floor",
+    image: "assets/floor-ground.jpg",
+    places: {
+      "Ground Entrance": { x: 12, y: 50 },
+      "West Corridor": { x: 28, y: 48 },
+      "Central Courtyard": { x: 55, y: 48 },
+      "East Corridor": { x: 78, y: 48 }
+    }
+  },
+  first: {
+    label: "First Floor",
+    image: "assets/floor-1.jpg",
+    places: {
+      "First Floor Entrance": { x: 50, y: 83 },
+      "First Floor West Wing": { x: 28, y: 43 },
+      "First Floor Centre": { x: 50, y: 53 },
+      "First Floor East Wing": { x: 73, y: 43 }
+    }
+  },
+  second: {
+    label: "Second Floor",
+    image: "assets/floor-2.jpg",
+    places: {
+      "Main Entrance": { x: 50, y: 79 },
+      "South Corridor": { x: 50, y: 64 },
+      "Centre Staircase": { x: 50, y: 51 },
+      "West Wing": { x: 27, y: 42 },
+      "East Wing": { x: 73, y: 42 },
+      "North West Staircase": { x: 34, y: 23 },
+      "North East Staircase": { x: 66, y: 23 }
+    }
+  },
+  third: {
+    label: "Third Floor",
+    image: "assets/floor-3.jpg",
+    places: {
+      "Third Floor Entrance": { x: 12, y: 52 },
+      "Third Floor West Wing": { x: 32, y: 50 },
+      "Third Floor Centre": { x: 52, y: 49 },
+      "Third Floor East Wing": { x: 75, y: 47 }
+    }
+  },
+  fourth: {
+    label: "Fourth Floor",
+    image: "assets/floor-4.jpg",
+    places: {
+      "Fourth Floor Entrance": { x: 50, y: 79 },
+      "Fourth Floor West Wing": { x: 27, y: 42 },
+      "Fourth Floor Centre": { x: 50, y: 54 },
+      "Fourth Floor East Wing": { x: 73, y: 42 }
+    }
+  }
+};
+
+const resourceCoordinates = {
+  rg1: { x: 24, y: 49 },
+  rg2: { x: 78, y: 45 },
+  rg3: { x: 31, y: 68 },
+  r101: { x: 31, y: 34 },
+  r102: { x: 76, y: 43 },
+  r103: { x: 50, y: 76 },
+  r1: { x: 50, y: 73 },
+  r2: { x: 57, y: 53 },
+  r3: { x: 72, y: 32 },
+  r4: { x: 77, y: 67 },
+  r5: { x: 50, y: 48 },
+  r6: { x: 57, y: 67 },
+  r7: { x: 28, y: 32 },
+  r8: { x: 62, y: 67 },
+  r301: { x: 43, y: 35 },
+  r302: { x: 68, y: 45 },
+  r303: { x: 28, y: 58 },
+  r401: { x: 50, y: 53 },
+  r402: { x: 62, y: 54 },
+  r403: { x: 72, y: 33 },
+  r404: { x: 24, y: 67 },
+  r405: { x: 77, y: 67 }
 };
 
 let activeRoute = {
-  from: "Main Gate",
+  from: "Main Entrance",
   destinationId: null
 };
 
@@ -161,6 +246,36 @@ function loadState() {
   };
 }
 
+function syncSeedResourceDetails() {
+  const seedById = Object.fromEntries(seedResources.map((resource) => [resource.id, resource]));
+  const synced = state.resources.map((resource) => {
+    const seed = seedById[resource.id];
+    if (!seed) return resource;
+    return {
+      ...resource,
+      name: seed.name,
+      type: seed.type,
+      capacity: seed.capacity,
+      location: seed.location,
+      floor: seed.floor || floorFromLocation(seed.location),
+      features: cloneData(seed.features)
+    };
+  });
+  const existingIds = new Set(synced.map((resource) => resource.id));
+  const missingSeeds = seedResources
+    .filter((resource) => !existingIds.has(resource.id))
+    .map((resource) => ({ ...cloneData(resource), floor: resource.floor || floorFromLocation(resource.location) }));
+  state.resources = [...synced, ...missingSeeds];
+}
+
+function floorFromLocation(location) {
+  if (location.includes("Ground Floor")) return "ground";
+  if (location.includes("First Floor")) return "first";
+  if (location.includes("Third Floor")) return "third";
+  if (location.includes("Fourth Floor")) return "fourth";
+  return "second";
+}
+
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
@@ -219,19 +334,26 @@ function occupancy(resource) {
 }
 
 function buildingName(resource) {
-  if (resource.location.includes("Block A")) return "Block A";
-  if (resource.location.includes("Block B")) return "Block B";
-  if (resource.location.includes("Block C")) return "Block C";
-  if (resource.location.includes("Block D")) return "Block D";
-  if (resource.location.includes("Admin")) return "Admin Block";
-  if (resource.location.includes("Media")) return "Media Cell";
-  if (resource.location.includes("Innovation")) return "Innovation Lab";
-  if (resource.location.includes("Ground")) return "Campus Ground";
-  return "Admin Block";
+  if (resource.location.includes("West")) return "West Wing";
+  if (resource.location.includes("East")) return "East Wing";
+  if (resource.location.includes("Centre")) return "Centre Wing";
+  return "Second Floor";
+}
+
+function resourceFloor(resource) {
+  return resource.floor || floorFromLocation(resource.location);
+}
+
+function activeFloorPlan() {
+  return floorPlans[filters.mapFloor] || floorPlans.second;
 }
 
 function mapPosition(resource, index = 0) {
-  const base = buildingCoordinates[buildingName(resource)] || buildingCoordinates["Admin Block"];
+  const exact = resourceCoordinates[resource.id];
+  if (exact) return exact;
+
+  const places = floorPlans[resourceFloor(resource)]?.places || activeFloorPlan().places;
+  const base = places[buildingName(resource)] || Object.values(places)[0];
   const offset = ((index % 5) - 2) * 2.2;
   return {
     x: Math.max(5, Math.min(95, base.x + offset)),
@@ -250,13 +372,15 @@ function routePointStyle(point) {
 }
 
 function destinationOptions() {
-  const resourceOptions = state.resources.map((resource) => ({
-    label: `${resource.name} - ${resource.location}`,
-    resource
-  }));
+  const resourceOptions = state.resources
+    .filter((resource) => resourceFloor(resource) === filters.mapFloor)
+    .map((resource) => ({
+      label: `${resource.name} - ${resource.location}`,
+      resource
+    }));
 
-  const placeOptions = Object.keys(buildingCoordinates).map((building) => ({
-    label: building,
+  const placeOptions = Object.keys(activeFloorPlan().places).map((building) => ({
+    label: `${building} - ${activeFloorPlan().label}`,
     place: building
   }));
 
@@ -280,10 +404,13 @@ function findDestination(query) {
     return { type: "resource", resource };
   }
 
-  const place = Object.keys(buildingCoordinates).find((building) => building.toLowerCase() === normalized) ||
-    Object.keys(buildingCoordinates).find((building) => building.toLowerCase().includes(normalized));
+  const floorPlaceEntries = Object.entries(floorPlans).flatMap(([floor, plan]) => (
+    Object.keys(plan.places).map((placeName) => ({ floor, placeName, label: `${placeName} - ${plan.label}` }))
+  ));
+  const place = floorPlaceEntries.find((item) => item.placeName.toLowerCase() === normalized || item.label.toLowerCase() === normalized) ||
+    floorPlaceEntries.find((item) => item.placeName.toLowerCase().includes(normalized) || item.label.toLowerCase().includes(normalized));
 
-  return place ? { type: "place", place } : null;
+  return place ? { type: "place", place: place.placeName, floor: place.floor } : null;
 }
 
 function searchMatchesResource(resource) {
@@ -448,22 +575,35 @@ function renderEvents() {
 function renderMapBuildings() {
   const select = document.querySelector("#mapBuildingFilter");
   const current = select.value || "all";
-  const buildings = [...new Set(state.resources.map(buildingName))].sort();
+  const buildings = [...new Set(state.resources
+    .filter((resource) => resourceFloor(resource) === filters.mapFloor)
+    .map(buildingName))].sort();
   select.innerHTML = [
-    `<option value="all">All buildings</option>`,
+    `<option value="all">All areas</option>`,
     ...buildings.map((building) => `<option value="${escapeHtml(building)}">${escapeHtml(building)}</option>`)
   ].join("");
   select.value = buildings.includes(current) ? current : "all";
+}
+
+function renderFloorPlan() {
+  const plan = activeFloorPlan();
+  const image = document.querySelector("#floorPlanImage");
+  image.src = plan.image;
+  image.alt = `${plan.label} plan`;
+  document.querySelectorAll("#mapFloorFilters button").forEach((button) => {
+    button.classList.toggle("active", button.dataset.mapFloor === filters.mapFloor);
+  });
 }
 
 function renderMapNavigationControls() {
   const currentSelect = document.querySelector("#currentLocation");
   const destinations = document.querySelector("#destinationList");
   const current = currentSelect.value || activeRoute.from;
-  const places = Object.keys(buildingCoordinates);
+  const places = Object.keys(activeFloorPlan().places);
 
   currentSelect.innerHTML = places.map((place) => `<option value="${escapeHtml(place)}">${escapeHtml(place)}</option>`).join("");
-  currentSelect.value = places.includes(current) ? current : "Main Gate";
+  currentSelect.value = places.includes(current) ? current : places[0];
+  activeRoute.from = currentSelect.value;
 
   destinations.innerHTML = destinationOptions()
     .map((option) => `<option value="${escapeHtml(option.label)}"></option>`)
@@ -471,7 +611,8 @@ function renderMapNavigationControls() {
 }
 
 function renderRoute() {
-  const fromPoint = buildingCoordinates[activeRoute.from] || buildingCoordinates["Main Gate"];
+  const plan = activeFloorPlan();
+  const fromPoint = plan.places[activeRoute.from] || Object.values(plan.places)[0];
   const marker = document.querySelector("#currentMarker");
   marker.innerHTML = `<div class="current-location" style="${routePointStyle(fromPoint)}"><span>You</span></div>`;
 
@@ -482,10 +623,10 @@ function renderRoute() {
 
   if (activeRoute.destinationId?.startsWith("place:")) {
     destinationLabel = activeRoute.destinationId.replace("place:", "");
-    destinationPoint = buildingCoordinates[destinationLabel];
+    destinationPoint = plan.places[destinationLabel];
   } else if (activeRoute.destinationId) {
     const resource = getResource(activeRoute.destinationId);
-    if (resource) {
+    if (resource && resourceFloor(resource) === filters.mapFloor) {
       destinationPoint = resourceMapPosition(resource);
       destinationLabel = `${resource.name}, ${resource.location}`;
     }
@@ -493,7 +634,7 @@ function renderRoute() {
 
   if (!destinationPoint) {
     routeSvg.innerHTML = "";
-    notice.textContent = "Choose your current location and search a room or place to navigate.";
+    notice.textContent = "Choose your current location and search a room to navigate.";
     return;
   }
 
@@ -503,13 +644,15 @@ function renderRoute() {
     <polyline points="${fromPoint.x},${fromPoint.y} ${midX},${midY} ${destinationPoint.x},${destinationPoint.y}" />
     <circle cx="${destinationPoint.x}" cy="${destinationPoint.y}" r="1.8" />
   `;
-  notice.textContent = `Route from ${activeRoute.from} to ${destinationLabel}: follow the highlighted path across the central campus road.`;
+  notice.textContent = `Route from ${activeRoute.from} to ${destinationLabel}: follow the highlighted path on the ${plan.label.toLowerCase()} plan.`;
 }
 
 function renderMap() {
+  renderFloorPlan();
   renderMapBuildings();
   renderMapNavigationControls();
   const resources = state.resources
+    .filter((resource) => resourceFloor(resource) === filters.mapFloor)
     .filter((resource) => filters.mapType === "all" || resource.type === filters.mapType)
     .filter((resource) => filters.mapBuilding === "all" || buildingName(resource) === filters.mapBuilding)
     .filter(searchMatchesResource);
@@ -633,6 +776,14 @@ function showNotice(message, isError = false) {
   const notice = document.querySelector("#bookingNotice");
   notice.textContent = message;
   notice.className = `notice show${isError ? " error" : ""}`;
+}
+
+function autoClassroomDecision(candidate, resource, requestedCapacity) {
+  if (resource.type !== "Classroom") return null;
+  if (resource.availability === "Maintenance") return { status: "Rejected", reason: "classroom is under maintenance" };
+  if (requestedCapacity > resource.capacity) return { status: "Rejected", reason: "capacity is too low" };
+  if (hasConflict(candidate)) return { status: "Rejected", reason: "requested slot conflicts with another approved booking" };
+  return { status: "Approved", reason: "classroom is available" };
 }
 
 function renderBookings() {
@@ -852,6 +1003,14 @@ function wireEvents() {
     renderMap();
   });
 
+  document.querySelector("#mapFloorFilters").addEventListener("click", (event) => {
+    if (!event.target.matches("button")) return;
+    filters.mapFloor = event.target.dataset.mapFloor;
+    filters.mapBuilding = "all";
+    activeRoute.destinationId = null;
+    renderMap();
+  });
+
   document.querySelector("#mapBuildingFilter").addEventListener("change", (event) => {
     filters.mapBuilding = event.target.value;
     renderMap();
@@ -867,11 +1026,13 @@ function wireEvents() {
     activeRoute.from = document.querySelector("#currentLocation").value;
     const destination = findDestination(document.querySelector("#destinationSearch").value);
     if (!destination) {
-      document.querySelector("#routeNotice").textContent = "No matching place found. Try a room number, resource name, or building name.";
+      document.querySelector("#routeNotice").textContent = "No matching room found. Try a room number, resource name, or staircase name.";
       document.querySelector("#mapRouteSvg").innerHTML = "";
       return;
     }
 
+    filters.mapFloor = destination.type === "resource" ? resourceFloor(destination.resource) : destination.floor;
+    filters.mapBuilding = "all";
     activeRoute.destinationId = destination.type === "resource" ? destination.resource.id : `place:${destination.place}`;
     renderMap();
     if (destination.type === "resource") {
@@ -907,12 +1068,35 @@ function wireEvents() {
     }
 
     const resource = getResource(candidate.resourceId);
+    const requestedCapacity = Number(form.elements.capacity.value);
+    const classroomDecision = autoClassroomDecision(candidate, resource, requestedCapacity);
+
+    if (classroomDecision) {
+      state.bookings.unshift({
+        id: makeId(),
+        ...candidate,
+        requesterId: currentUser.id,
+        requesterRole: currentUser.role,
+        status: classroomDecision.status,
+        createdAt: Date.now()
+      });
+      saveState();
+      form.reset();
+      form.elements.date.value = today;
+      form.elements.start.value = "10:00";
+      form.elements.end.value = "11:00";
+      showNotice(`Classroom booking ${classroomDecision.status.toLowerCase()} automatically because ${classroomDecision.reason}.`, classroomDecision.status === "Rejected");
+      renderAuth();
+      renderAll();
+      return;
+    }
+
     if (resource.availability === "Maintenance") {
       showNotice("This resource is under maintenance. Choose another suggested option.", true);
       return;
     }
 
-    if (Number(form.elements.capacity.value) > resource.capacity) {
+    if (requestedCapacity > resource.capacity) {
       showNotice("Selected resource does not meet the required capacity.", true);
       return;
     }

@@ -496,15 +496,22 @@ input {
 .campus-map {
   position: relative;
   min-height: 560px;
+  aspect-ratio: 1536 / 1058;
   overflow: hidden;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background:
-    linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0 1px, transparent 1px 100%),
-    linear-gradient(rgba(255, 255, 255, 0.82) 0 1px, transparent 1px 100%),
-    #dfeedd;
-  background-size: 44px 44px;
+  background: #ffffff;
   box-shadow: var(--shadow);
+}
+
+.floor-plan-image {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background: #ffffff;
 }
 
 .map-search {
@@ -519,7 +526,7 @@ input {
 .map-route {
   position: absolute;
   inset: 0;
-  z-index: 1;
+  z-index: 2;
   width: 100%;
   height: 100%;
   pointer-events: none;
@@ -528,7 +535,7 @@ input {
 .map-route polyline {
   fill: none;
   stroke: var(--red);
-  stroke-width: 1.5;
+  stroke-width: 1.2;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 3 2;
@@ -538,54 +545,9 @@ input {
   fill: var(--red);
 }
 
-.map-road {
-  position: absolute;
-  background: #b9c3c8;
-  box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.55);
-}
-
-.map-road.horizontal {
-  left: 8%;
-  right: 8%;
-  top: 45%;
-  height: 26px;
-}
-
-.map-road.vertical {
-  top: 8%;
-  bottom: 8%;
-  left: 48%;
-  width: 24px;
-}
-
-.map-zone {
-  position: absolute;
-  display: grid;
-  place-items: center;
-  min-width: 104px;
-  min-height: 70px;
-  padding: 10px;
-  border: 2px solid rgba(20, 32, 46, 0.14);
-  border-radius: 8px;
-  color: #17303c;
-  background: rgba(255, 255, 255, 0.74);
-  font-size: 13px;
-  font-weight: 800;
-  text-align: center;
-}
-
-.zone-a { left: 12%; top: 12%; }
-.zone-b { left: 42%; top: 15%; }
-.zone-c { left: 14%; top: 52%; }
-.zone-d { left: 54%; top: 52%; }
-.zone-admin { right: 10%; top: 14%; }
-.zone-ground { right: 9%; bottom: 8%; min-width: 132px; min-height: 90px; }
-.zone-media { right: 8%; top: 55%; }
-.zone-innovation { left: 36%; bottom: 8%; }
-
 .map-pin {
   position: absolute;
-  z-index: 2;
+  z-index: 3;
   display: grid;
   place-items: center;
   width: 34px;
@@ -600,7 +562,7 @@ input {
 
 .current-location {
   position: absolute;
-  z-index: 3;
+  z-index: 4;
   width: 22px;
   height: 22px;
   border: 4px solid white;
@@ -935,12 +897,6 @@ th {
 
   .map-search {
     grid-template-columns: 1fr;
-  }
-
-  .map-zone {
-    min-width: 82px;
-    min-height: 56px;
-    font-size: 11px;
   }
 
   .chart-row {
