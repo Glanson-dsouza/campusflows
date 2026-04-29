@@ -18,7 +18,7 @@
             </svg>
           </div>
           <div>
-            <strong>Smart Campus</strong>
+            <strong>CampFlow</strong>
             <span>Role based access</span>
           </div>
         </div>
@@ -58,7 +58,7 @@
             </svg>
           </div>
           <div>
-            <strong>Smart Campus</strong>
+            <strong>CampFlow</strong>
             <span>Resource Optimization</span>
           </div>
         </div>
@@ -133,15 +133,6 @@
               </div>
               <div id="departmentDashboard" class="department-summary"></div>
             </section>
-            <section class="panel wide" id="libraryPanel">
-              <div class="panel-header">
-                <div>
-                  <h2>Library</h2>
-                  <p>Available books and allocated collection slots.</p>
-                </div>
-              </div>
-              <div id="libraryBooks" class="library-grid"></div>
-            </section>
             <section class="panel wide">
               <div class="panel-header">
                 <div>
@@ -158,7 +149,7 @@
               </div>
               <div class="chart-list" id="occupancyChart"></div>
             </section>
-            <section class="panel">
+            <section class="panel" id="dashboardAlertsPanel">
               <div class="panel-header">
                 <div>
                   <h2>Conflict Alerts</h2>
@@ -280,14 +271,24 @@
           <div class="toolbar">
             <label class="search">
               <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 19.6-5.2-5.2a7 7 0 1 0-1.4 1.4l5.2 5.2 1.4-1.4ZM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z" /></svg>
-              <input id="librarySearch" type="search" placeholder="Search books by title, author, department, or shelf..." />
+              <input id="librarySearch" type="search" list="libraryBookSuggestions" placeholder="Search and select a book name..." />
+              <datalist id="libraryBookSuggestions"></datalist>
             </label>
           </div>
-          <section class="panel">
+          <section class="panel library-panel">
+            <div class="panel-header">
+              <div>
+                <h2>My Library Dashboard</h2>
+                <p>Registered books with pickup and return schedule.</p>
+              </div>
+            </div>
+            <div id="studentLibraryBooks" class="library-grid"></div>
+          </section>
+          <section class="panel library-panel">
             <div class="panel-header">
               <div>
                 <h2>Library</h2>
-                <p>Search available books and register a collection slot.</p>
+                <p>Select a book from the search bar and register a collection slot.</p>
               </div>
             </div>
             <div id="libraryCatalog" class="library-grid"></div>
@@ -498,6 +499,32 @@
       </main>
     </div>
 
+    <script type="application/json" id="libraryBookData">
+      [
+        { "id": "lib-cse-algorithms", "name": "Introduction to Algorithms", "author": "Cormen, Leiserson, Rivest, Stein", "department": "CSE", "copies": 4, "shelf": "CSE-A12" },
+        { "id": "lib-cse-database", "name": "Database System Concepts", "author": "Silberschatz, Korth, Sudarshan", "department": "CSE", "copies": 3, "shelf": "CSE-B04" },
+        { "id": "lib-cse-os", "name": "Operating System Concepts", "author": "Silberschatz, Galvin, Gagne", "department": "CSE", "copies": 4, "shelf": "CSE-C10" },
+        { "id": "lib-cse-networks", "name": "Computer Networks", "author": "Andrew S. Tanenbaum", "department": "CSE", "copies": 4, "shelf": "CSE-N02" },
+        { "id": "lib-cse-data-structures", "name": "Data Structures Using C", "author": "Reema Thareja", "department": "CSE", "copies": 5, "shelf": "CSE-D07" },
+        { "id": "lib-aiml-ai", "name": "Artificial Intelligence: A Modern Approach", "author": "Russell and Norvig", "department": "AIMl", "copies": 3, "shelf": "AIML-A01" },
+        { "id": "lib-aiml-ml", "name": "Machine Learning", "author": "Tom M. Mitchell", "department": "AIMl", "copies": 4, "shelf": "AIML-M04" },
+        { "id": "lib-ece-devices", "name": "Electronic Devices and Circuits", "author": "Robert L. Boylestad", "department": "ECE", "copies": 3, "shelf": "ECE-E08" },
+        { "id": "lib-ece-digital", "name": "Digital Logic and Computer Design", "author": "M. Morris Mano", "department": "ECE", "copies": 4, "shelf": "ECE-D03" },
+        { "id": "lib-ece-signals", "name": "Signals and Systems", "author": "Alan V. Oppenheim", "department": "ECE", "copies": 3, "shelf": "ECE-S11" },
+        { "id": "lib-eee-machines", "name": "Electrical Machinery", "author": "P. S. Bimbhra", "department": "EEE", "copies": 3, "shelf": "EEE-M02" },
+        { "id": "lib-me-thermo", "name": "Engineering Thermodynamics", "author": "P. K. Nag", "department": "ME", "copies": 4, "shelf": "ME-T05" },
+        { "id": "lib-cv-rcc", "name": "Reinforced Concrete Design", "author": "S. Unnikrishna Pillai", "department": "CV", "copies": 3, "shelf": "CV-R03" },
+        { "id": "lib-mba-marketing", "name": "Marketing Management", "author": "Philip Kotler", "department": "MBA", "copies": 5, "shelf": "MBA-M02" },
+        { "id": "lib-mba-finance", "name": "Financial Management", "author": "I. M. Pandey", "department": "MBA", "copies": 4, "shelf": "MBA-F08" },
+        { "id": "lib-mba-hr", "name": "Human Resource Management", "author": "Gary Dessler", "department": "MBA", "copies": 4, "shelf": "MBA-H06" },
+        { "id": "lib-mca-java", "name": "Programming with Java", "author": "E. Balagurusamy", "department": "MCA", "copies": 4, "shelf": "MCA-J02" },
+        { "id": "lib-common-math", "name": "Engineering Mathematics", "author": "B. S. Grewal", "department": "Common", "copies": 6, "shelf": "GEN-G01" },
+        { "id": "lib-common-communication", "name": "Communication Skills", "author": "Sanjay Kumar", "department": "Common", "copies": 8, "shelf": "GEN-G05" },
+        { "id": "lib-common-software", "name": "Software Engineering", "author": "Ian Sommerville", "department": "Common", "copies": 5, "shelf": "GEN-S09" },
+        { "id": "lib-common-discrete", "name": "Discrete Mathematics and Its Applications", "author": "Kenneth H. Rosen", "department": "Common", "copies": 5, "shelf": "GEN-M04" },
+        { "id": "lib-common-environment", "name": "Environmental Studies", "author": "Erach Bharucha", "department": "Common", "copies": 6, "shelf": "GEN-E02" }
+      ]
+    </script>
     <script src="app.js"></script>
   </body>
 </html>

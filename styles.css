@@ -347,7 +347,12 @@ h2 {
   display: block;
 }
 
-.metric-grid,
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
 .resource-grid,
 .event-grid {
   display: grid;
@@ -846,6 +851,10 @@ input {
 
 .library-book {
   align-items: center;
+}
+
+.library-panel + .library-panel {
+  margin-top: 16px;
 }
 
 .library-book p {
