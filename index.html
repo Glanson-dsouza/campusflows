@@ -64,7 +64,7 @@
         </div>
 
         <nav class="nav" aria-label="Primary">
-          <button class="nav-item active" data-view="dashboard" data-min-role="faculty" title="Dashboard">
+          <button class="nav-item active" data-view="dashboard" title="Dashboard">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h7V4H4v9Zm0 7h7v-5H4v5Zm9 0h7v-9h-7v9Zm0-16v5h7V4h-7Z" /></svg>
             Dashboard
           </button>
@@ -72,13 +72,17 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5h18v4H3V5Zm2 6h14v8H5v-8Zm3 2v4h3v-4H8Zm5 0v4h3v-4h-3Z" /></svg>
             Resources
           </button>
-          <button class="nav-item" data-view="booking" title="Booking">
+          <button class="nav-item" data-view="booking" data-min-role="faculty" title="Booking">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2Zm-1 9v9h12v-9H6Zm2 2h4v4H8v-4Z" /></svg>
             Booking
           </button>
           <button class="nav-item" data-view="events" title="Events">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h2v3h6V2h2v3h3v17H4V5h3V2Zm-1 8v10h12V10H6Zm2 2h3v3H8v-3Zm5 0h3v3h-3v-3Z" /></svg>
             Events
+          </button>
+          <button class="nav-item" data-view="library" data-student-only="true" title="Library">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4c0-1.1.9-2 2-2h12v17H7c-1.1 0-2 .9-2 2V4Zm2 13.2c.3-.1.7-.2 1-.2h9V4H7v13.2ZM8 6h7v2H8V6Zm0 4h7v2H8v-2Z" /></svg>
+            Library
           </button>
           <button class="nav-item" data-view="map" title="Campus map">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m15 4-6-2-6 2v18l6-2 6 2 6-2V2l-6 2Zm-8 .7v13.6l-2 .7V5.3l2-.6Zm6 14.6-4-1.4V4.7l4 1.4v13.2Zm6-.6-2 .6V5.7l2-.7v13.7Z" /></svg>
@@ -123,6 +127,24 @@
             <section class="panel wide">
               <div class="panel-header">
                 <div>
+                  <h2>Department Facilities</h2>
+                  <p>Facilities available according to the current login.</p>
+                </div>
+              </div>
+              <div id="departmentDashboard" class="department-summary"></div>
+            </section>
+            <section class="panel wide" id="libraryPanel">
+              <div class="panel-header">
+                <div>
+                  <h2>Library</h2>
+                  <p>Available books and allocated collection slots.</p>
+                </div>
+              </div>
+              <div id="libraryBooks" class="library-grid"></div>
+            </section>
+            <section class="panel wide">
+              <div class="panel-header">
+                <div>
                   <h2>Resource Occupancy</h2>
                   <p>Current approved bookings and utilization by resource.</p>
                 </div>
@@ -162,6 +184,9 @@
               <option value="Available">Available</option>
               <option value="Occupied">Occupied</option>
               <option value="Maintenance">Maintenance</option>
+            </select>
+            <select id="departmentFilter" aria-label="Department filter">
+              <option value="all">All departments</option>
             </select>
           </div>
           <div class="resource-grid" id="resourceGrid"></div>
@@ -249,6 +274,24 @@
             </select>
           </div>
           <div class="event-grid" id="eventGrid"></div>
+        </section>
+
+        <section class="view" id="libraryView">
+          <div class="toolbar">
+            <label class="search">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m21 19.6-5.2-5.2a7 7 0 1 0-1.4 1.4l5.2 5.2 1.4-1.4ZM5 10a5 5 0 1 1 10 0 5 5 0 0 1-10 0Z" /></svg>
+              <input id="librarySearch" type="search" placeholder="Search books by title, author, department, or shelf..." />
+            </label>
+          </div>
+          <section class="panel">
+            <div class="panel-header">
+              <div>
+                <h2>Library</h2>
+                <p>Search available books and register a collection slot.</p>
+              </div>
+            </div>
+            <div id="libraryCatalog" class="library-grid"></div>
+          </section>
         </section>
 
         <section class="view" id="mapView">
@@ -351,10 +394,14 @@
               </div>
               <form class="resource-form" id="resourceForm">
                 <label>
-                  Resource name
-                  <input name="name" required placeholder="Classroom C-302" />
+                  Department name
+                  <select name="department" required></select>
                 </label>
-                <div class="form-row two">
+                <div class="form-row">
+                  <label>
+                    Resource name
+                    <input name="name" required placeholder="Classroom C-302" />
+                  </label>
                   <label>
                     Type
                     <select name="type" required></select>
@@ -388,6 +435,63 @@
                 </label>
                 <button class="secondary" id="saveStatus" type="button">Save status</button>
               </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2>IoT Energy Control</h2>
+                  <p>Connect LoRaWAN or WiFi devices and control lights, fans, and lab electronics.</p>
+                </div>
+              </div>
+              <div class="iot-actions">
+                <label>
+                  College closing time
+                  <input id="collegeCloseTime" type="time" value="18:00" />
+                </label>
+                <button class="primary" id="collegeCloseShutdown" type="button">Switch off all electronics</button>
+                <button class="secondary" id="switchAllOn" type="button">Switch all on</button>
+              </div>
+              <div class="notice" id="iotNotice" role="status"></div>
+              <form class="iot-form" id="iotDeviceForm">
+                <label>
+                  Device name
+                  <input name="name" required placeholder="Third floor light controller" />
+                </label>
+                <div class="form-row">
+                  <label>
+                    Device type
+                    <select name="deviceType" required>
+                      <option>Lights</option>
+                      <option>Fans</option>
+                      <option>Projector</option>
+                      <option>Lab Equipment</option>
+                    </select>
+                  </label>
+                  <label>
+                    Network
+                    <select name="protocol" required>
+                      <option>LoRaWAN</option>
+                      <option>WiFi</option>
+                    </select>
+                  </label>
+                  <label>
+                    Floor
+                    <select name="floor" required>
+                      <option value="ground">Ground Floor</option>
+                      <option value="first">First Floor</option>
+                      <option value="second">Second Floor</option>
+                      <option value="third">Third Floor</option>
+                      <option value="fourth">Fourth Floor</option>
+                    </select>
+                  </label>
+                </div>
+                <label>
+                  Area / room
+                  <input name="area" required placeholder="Classroom 2701 or corridor" />
+                </label>
+                <button class="secondary" type="submit">Connect device</button>
+              </form>
+              <div class="iot-list" id="iotDeviceList"></div>
             </section>
           </div>
         </section>

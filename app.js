@@ -2,36 +2,37 @@ const STORAGE_KEY = "smart-campus-resource-platform-v1";
 const SESSION_KEY = "smart-campus-current-user-v1";
 
 const resourceTypes = ["Classroom", "Lab", "Seminar Hall", "Equipment"];
+const departments = ["CSE", "MBA", "ECE", "CSDS","ISE","CV","AIMl","ME","EEE","MCA"];
 const roleRank = { student: 1, faculty: 2, admin: 3 };
 const demoUsers = [
-  { id: "student01", password: "student123", name: "Student User", role: "student", homeView: "resources" },
-  { id: "faculty01", password: "faculty123", name: "Faculty User", role: "faculty", homeView: "dashboard" },
-  { id: "admin01", password: "admin123", name: "Admin User", role: "admin", homeView: "dashboard" }
+  { id: "student01", password: "student123", name: "Student User", role: "student", department: "CSE", homeView: "dashboard" },
+  { id: "faculty01", password: "faculty123", name: "Faculty User", role: "faculty", department: "MBA", homeView: "dashboard" },
+  { id: "admin01", password: "admin123", name: "Admin User", role: "admin", department: "Administration", homeView: "dashboard" }
 ];
 
 const seedResources = [
-  { id: "rg1", name: "Ground Floor Seminar Hall", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Ground Floor, West Wing", floor: "ground", features: ["Projector", "Audio", "AC"] },
-  { id: "rg2", name: "Ground Floor Library", type: "Lab", capacity: 80, availability: "Available", location: "Ground Floor, East Wing", floor: "ground", features: ["Systems", "Study Area"] },
-  { id: "rg3", name: "Ground Floor Class Room", type: "Classroom", capacity: 70, availability: "Available", location: "Ground Floor, South Wing", floor: "ground", features: ["Whiteboard", "Projector"] },
-  { id: "r101", name: "Classroom 1F West", type: "Classroom", capacity: 70, availability: "Available", location: "First Floor, West Wing", floor: "first", features: ["Whiteboard", "Projector"] },
-  { id: "r102", name: "First Floor Computer Lab", type: "Lab", capacity: 80, availability: "Available", location: "First Floor, East Wing", floor: "first", features: ["Systems", "LAN"] },
-  { id: "r103", name: "First Floor Seminar Hall", type: "Seminar Hall", capacity: 140, availability: "Available", location: "First Floor, South Centre", floor: "first", features: ["Projector", "Audio"] },
-  { id: "r1", name: "Seminar Hall 2716", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Second Floor, South Centre", features: ["Projector", "Audio", "AC"] },
-  { id: "r2", name: "OS/USP/MF Lab 2718-A", type: "Lab", capacity: 64, availability: "Available", location: "Second Floor, Centre Wing", features: ["Systems", "LAN", "Whiteboard"] },
-  { id: "r3", name: "Classroom 2701", type: "Classroom", capacity: 72, availability: "Available", location: "Second Floor, North East Wing", features: ["Smart Board", "Projector"] },
-  { id: "r4", name: "Network Lab 2710-B", type: "Lab", capacity: 48, availability: "Maintenance", location: "Second Floor, South East Wing", features: ["Kits", "LAN"] },
-  { id: "r5", name: "Tutorial Room 2718", type: "Seminar Hall", capacity: 120, availability: "Available", location: "Second Floor, Centre", features: ["Projector", "Discussion Seating"] },
-  { id: "r6", name: "Store Room 2715", type: "Equipment", capacity: 1, availability: "Available", location: "Second Floor, South Centre", features: ["Projector Set", "Shared Equipment"] },
-  { id: "r7", name: "Classroom 2729", type: "Classroom", capacity: 55, availability: "Available", location: "Second Floor, North West Wing", features: ["Whiteboard", "Projector"] },
-  { id: "r8", name: "Department Lab 2714", type: "Equipment", capacity: 12, availability: "Available", location: "Second Floor, South Centre", features: ["Sensors", "Controllers"] },
-  { id: "r301", name: "Third Floor Classroom", type: "Classroom", capacity: 70, availability: "Available", location: "Third Floor, North Wing", floor: "third", features: ["Whiteboard", "Projector"] },
-  { id: "r302", name: "Third Floor Lab", type: "Lab", capacity: 60, availability: "Available", location: "Third Floor, East Wing", floor: "third", features: ["Systems", "LAN"] },
-  { id: "r303", name: "Third Floor Tutorial Room", type: "Seminar Hall", capacity: 90, availability: "Available", location: "Third Floor, West Wing", floor: "third", features: ["Discussion Seating"] },
-  { id: "r401", name: "Library 4F10-A", type: "Lab", capacity: 120, availability: "Available", location: "Fourth Floor, Centre Wing", floor: "fourth", features: ["Reading Area", "Systems"] },
-  { id: "r402", name: "Computer Lab MBA", type: "Lab", capacity: 70, availability: "Available", location: "Fourth Floor, East Centre", floor: "fourth", features: ["Systems", "LAN"] },
-  { id: "r403", name: "Classroom MBA 4F01", type: "Classroom", capacity: 72, availability: "Available", location: "Fourth Floor, North East Wing", floor: "fourth", features: ["Whiteboard", "Projector"] },
-  { id: "r404", name: "D.B.M.S Lab B.E", type: "Lab", capacity: 64, availability: "Available", location: "Fourth Floor, South West Wing", floor: "fourth", features: ["Database Systems", "LAN"] },
-  { id: "r405", name: "Activity Room MBA", type: "Seminar Hall", capacity: 100, availability: "Available", location: "Fourth Floor, South East Wing", floor: "fourth", features: ["Projector", "Open Seating"] }
+  { id: "rg1", name: "Ground Floor Seminar Hall", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Ground Floor, West Wing", floor: "ground", department: "Common", features: ["Projector", "Audio", "AC"] },
+  { id: "rg2", name: "Ground Floor Library", type: "Lab", capacity: 80, availability: "Available", location: "Ground Floor, East Wing", floor: "ground", department: "Common", features: ["Systems", "Study Area"] },
+  { id: "rg3", name: "Ground Floor Class Room", type: "Classroom", capacity: 70, availability: "Available", location: "Ground Floor, South Wing", floor: "ground", department: "Common", features: ["Whiteboard", "Projector"] },
+  { id: "r101", name: "Classroom 1F West", type: "Classroom", capacity: 70, availability: "Available", location: "First Floor, West Wing", floor: "first", department: "CSE", features: ["Whiteboard", "Projector"] },
+  { id: "r102", name: "First Floor Computer Lab", type: "Lab", capacity: 80, availability: "Available", location: "First Floor, East Wing", floor: "first", department: "CSE", features: ["Systems", "LAN"] },
+  { id: "r103", name: "First Floor Seminar Hall", type: "Seminar Hall", capacity: 140, availability: "Available", location: "First Floor, South Centre", floor: "first", department: "Common", features: ["Projector", "Audio"] },
+  { id: "r1", name: "Seminar Hall 2716", type: "Seminar Hall", capacity: 180, availability: "Available", location: "Second Floor, South Centre", department: "Common", features: ["Projector", "Audio", "AC"] },
+  { id: "r2", name: "OS/USP/MF Lab 2718-A", type: "Lab", capacity: 64, availability: "Available", location: "Second Floor, Centre Wing", department: "CSE", features: ["Systems", "LAN", "Whiteboard"] },
+  { id: "r3", name: "Classroom 2701", type: "Classroom", capacity: 72, availability: "Available", location: "Second Floor, North East Wing", department: "MBA", features: ["Smart Board", "Projector"] },
+  { id: "r4", name: "Network Lab 2710-B", type: "Lab", capacity: 48, availability: "Maintenance", location: "Second Floor, South East Wing", department: "ECE", features: ["Kits", "LAN"] },
+  { id: "r5", name: "Tutorial Room 2718", type: "Seminar Hall", capacity: 120, availability: "Available", location: "Second Floor, Centre", department: "Common", features: ["Projector", "Discussion Seating"] },
+  { id: "r6", name: "Store Room 2715", type: "Equipment", capacity: 1, availability: "Available", location: "Second Floor, South Centre", department: "Common", features: ["Projector Set", "Shared Equipment"] },
+  { id: "r7", name: "Classroom 2729", type: "Classroom", capacity: 55, availability: "Available", location: "Second Floor, North West Wing", department: "CSE", features: ["Whiteboard", "Projector"] },
+  { id: "r8", name: "Department Lab 2714", type: "Equipment", capacity: 12, availability: "Available", location: "Second Floor, South Centre", department: "ECE", features: ["Sensors", "Controllers"] },
+  { id: "r301", name: "Third Floor Classroom", type: "Classroom", capacity: 70, availability: "Available", location: "Third Floor, North Wing", floor: "third", department: "ECE", features: ["Whiteboard", "Projector"] },
+  { id: "r302", name: "Third Floor Lab", type: "Lab", capacity: 60, availability: "Available", location: "Third Floor, East Wing", floor: "third", department: "ECE", features: ["Systems", "LAN"] },
+  { id: "r303", name: "Third Floor Tutorial Room", type: "Seminar Hall", capacity: 90, availability: "Available", location: "Third Floor, West Wing", floor: "third", department: "Common", features: ["Discussion Seating"] },
+  { id: "r401", name: "Library 4F10-A", type: "Lab", capacity: 120, availability: "Available", location: "Fourth Floor, Centre Wing", floor: "fourth", department: "Common", features: ["Reading Area", "Systems"] },
+  { id: "r402", name: "Computer Lab MBA", type: "Lab", capacity: 70, availability: "Available", location: "Fourth Floor, East Centre", floor: "fourth", department: "MBA", features: ["Systems", "LAN"] },
+  { id: "r403", name: "Classroom MBA 4F01", type: "Classroom", capacity: 72, availability: "Available", location: "Fourth Floor, North East Wing", floor: "fourth", department: "MBA", features: ["Whiteboard", "Projector"] },
+  { id: "r404", name: "D.B.M.S Lab B.E", type: "Lab", capacity: 64, availability: "Available", location: "Fourth Floor, South West Wing", floor: "fourth", department: "B.E", features: ["Database Systems", "LAN"] },
+  { id: "r405", name: "Activity Room MBA", type: "Seminar Hall", capacity: 100, availability: "Available", location: "Fourth Floor, South East Wing", floor: "fourth", department: "MBA", features: ["Projector", "Open Seating"] }
 ];
 
 const today = new Date().toISOString().slice(0, 10);
@@ -57,9 +58,27 @@ const seedEvents = [
   { id: "e5", title: "Ethnic Day Cultural Fest", type: "Cultural", venueName: "Open Air Stage", date: offsetDate(5), start: "09:30", end: "17:30", organizer: "Cultural Club", seats: 300, description: "Cultural performances, showcases, and student-led stalls.", registrations: [] }
 ];
 
+const seedIoTDevices = [
+  { id: "iot1", name: "Second Floor Corridor Lights", deviceType: "Lights", protocol: "LoRaWAN", area: "Second Floor Corridor", floor: "second", status: "On", lastSeen: Date.now() - 120000 },
+  { id: "iot2", name: "MBA Classroom Fan Bank", deviceType: "Fans", protocol: "WiFi", area: "Classroom MBA 4F01", floor: "fourth", status: "On", lastSeen: Date.now() - 180000 },
+  { id: "iot3", name: "Ground Floor Library Lights", deviceType: "Lights", protocol: "WiFi", area: "Ground Floor Library", floor: "ground", status: "On", lastSeen: Date.now() - 240000 },
+  { id: "iot4", name: "CSE Lab Fan Controller", deviceType: "Fans", protocol: "LoRaWAN", area: "OS/USP/MF Lab 2718-A", floor: "second", status: "Off", lastSeen: Date.now() - 300000 }
+];
+
+const seedLibraryBooks = [
+  { id: "lib1", title: "Introduction to Algorithms", author: "Cormen, Leiserson, Rivest, Stein", department: "CSE", copies: 4, shelf: "CSE-A12", registrations: [] },
+  { id: "lib2", title: "Database System Concepts", author: "Silberschatz, Korth, Sudarshan", department: "CSE", copies: 3, shelf: "CSE-B04", registrations: [] },
+  { id: "lib3", title: "Marketing Management", author: "Philip Kotler", department: "MBA", copies: 5, shelf: "MBA-M02", registrations: [] },
+  { id: "lib4", title: "Electronic Devices and Circuits", author: "Boylestad", department: "ECE", copies: 3, shelf: "ECE-E08", registrations: [] },
+  { id: "lib5", title: "Engineering Mathematics", author: "B. S. Grewal", department: "Common", copies: 6, shelf: "GEN-G01", registrations: [] },
+  { id: "lib6", title: "Communication Skills", author: "Sanjay Kumar", department: "Common", copies: 8, shelf: "GEN-G05", registrations: [] }
+];
+
 let state = loadState();
 syncSeedResourceDetails();
 state.events ||= cloneData(seedEvents);
+state.iotDevices ||= cloneData(seedIoTDevices);
+state.libraryBooks ||= cloneData(seedLibraryBooks);
 let currentUser = loadSession();
 let filters = {
   search: "",
@@ -69,6 +88,8 @@ let filters = {
   trendType: "all",
   eventTime: "all",
   eventType: "all",
+  librarySearch: "",
+  department: "all",
   mapType: "all",
   mapFloor: "second",
   mapBuilding: "all"
@@ -188,9 +209,10 @@ function hasRole(minRole) {
 
 function canAccessView(viewName) {
   if (!currentUser) return false;
-  if (viewName === "dashboard") return hasRole("faculty");
+  if (viewName === "booking") return hasRole("faculty");
   if (viewName === "admin") return hasRole("admin");
-  return ["resources", "booking", "events", "map"].includes(viewName);
+  if (viewName === "library") return currentUser.role === "student";
+  return ["dashboard", "resources", "events", "map"].includes(viewName);
 }
 
 function cloneData(data) {
@@ -216,6 +238,7 @@ const views = {
   resources: document.querySelector("#resourcesView"),
   booking: document.querySelector("#bookingView"),
   events: document.querySelector("#eventsView"),
+  library: document.querySelector("#libraryView"),
   map: document.querySelector("#mapView"),
   admin: document.querySelector("#adminView")
 };
@@ -225,6 +248,7 @@ const pageTitles = {
   resources: "Resource Inventory",
   booking: "Smart Booking",
   events: "Campus Events",
+  library: "Library",
   map: "Campus Map",
   admin: "Monitoring & Approvals"
 };
@@ -242,7 +266,9 @@ function loadState() {
   return {
     resources: cloneData(seedResources),
     bookings: cloneData(seedBookings),
-    events: cloneData(seedEvents)
+    events: cloneData(seedEvents),
+    iotDevices: cloneData(seedIoTDevices),
+    libraryBooks: cloneData(seedLibraryBooks)
   };
 }
 
@@ -258,13 +284,14 @@ function syncSeedResourceDetails() {
       capacity: seed.capacity,
       location: seed.location,
       floor: seed.floor || floorFromLocation(seed.location),
+      department: seed.department || "Common",
       features: cloneData(seed.features)
     };
   });
   const existingIds = new Set(synced.map((resource) => resource.id));
   const missingSeeds = seedResources
     .filter((resource) => !existingIds.has(resource.id))
-    .map((resource) => ({ ...cloneData(resource), floor: resource.floor || floorFromLocation(resource.location) }));
+    .map((resource) => ({ ...cloneData(resource), floor: resource.floor || floorFromLocation(resource.location), department: resource.department || "Common" }));
   state.resources = [...synced, ...missingSeeds];
 }
 
@@ -299,6 +326,24 @@ function overlaps(a, b) {
 
 function getResource(resourceId) {
   return state.resources.find((resource) => resource.id === resourceId);
+}
+
+function resourceDepartment(resource) {
+  return resource.department || "Common";
+}
+
+function canUseResource(resource) {
+  if (!resource || hasRole("admin")) return Boolean(resource);
+  return resourceDepartment(resource) === "Common" || resourceDepartment(resource) === currentUser.department;
+}
+
+function departmentMatchesFilter(resource) {
+  if (!hasRole("admin")) return true;
+  return filters.department === "all" || resourceDepartment(resource) === filters.department;
+}
+
+function visibleResources() {
+  return state.resources.filter(canUseResource).filter(departmentMatchesFilter);
 }
 
 function approvedBookings(resourceId) {
@@ -372,7 +417,7 @@ function routePointStyle(point) {
 }
 
 function destinationOptions() {
-  const resourceOptions = state.resources
+  const resourceOptions = visibleResources()
     .filter((resource) => resourceFloor(resource) === filters.mapFloor)
     .map((resource) => ({
       label: `${resource.name} - ${resource.location}`,
@@ -391,11 +436,12 @@ function findDestination(query) {
   const normalized = query.trim().toLowerCase();
   if (!normalized) return null;
 
-  const resource = state.resources.find((item) => (
+  const resources = visibleResources();
+  const resource = resources.find((item) => (
     item.name.toLowerCase() === normalized ||
     item.location.toLowerCase() === normalized ||
     `${item.name} - ${item.location}`.toLowerCase() === normalized
-  )) || state.resources.find((item) => (
+  )) || resources.find((item) => (
     item.name.toLowerCase().includes(normalized) ||
     item.location.toLowerCase().includes(normalized)
   ));
@@ -415,7 +461,7 @@ function findDestination(query) {
 
 function searchMatchesResource(resource) {
   const query = filters.search.toLowerCase();
-  return [resource.name, resource.type, resource.location, ...resource.features].join(" ").toLowerCase().includes(query);
+  return [resource.name, resource.type, resource.location, resourceDepartment(resource), ...resource.features].join(" ").toLowerCase().includes(query);
 }
 
 function searchMatchesBooking(booking) {
@@ -444,10 +490,12 @@ function searchMatchesEvent(event) {
 }
 
 function renderMetrics() {
-  const total = state.resources.length;
-  const pending = state.bookings.filter((booking) => booking.status === "Pending").length;
-  const conflicts = state.bookings.filter((booking) => booking.status === "Pending" && hasConflict(booking)).length;
-  const avgUtil = Math.round(state.resources.reduce((sum, resource) => sum + utilization(resource.id), 0) / total);
+  const resources = visibleResources();
+  const resourceIds = new Set(resources.map((resource) => resource.id));
+  const total = resources.length;
+  const pending = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending").length;
+  const conflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking)).length;
+  const avgUtil = total ? Math.round(resources.reduce((sum, resource) => sum + utilization(resource.id), 0) / total) : 0;
 
   document.querySelector("#metrics").innerHTML = [
     ["Resources", total, "Inventory"],
@@ -463,8 +511,136 @@ function renderMetrics() {
   `).join("");
 }
 
+function renderDepartmentDashboard() {
+  const target = document.querySelector("#departmentDashboard");
+  if (!target) return;
+
+  const resources = visibleResources();
+  const title = hasRole("admin") ? "All departments" : `${currentUser.department} department + Common`;
+  const departmentCounts = departments
+    .map((department) => ({
+      department,
+      count: resources.filter((resource) => resourceDepartment(resource) === department).length
+    }))
+    .filter((item) => item.count > 0);
+
+  target.innerHTML = `
+    <div class="department-summary-top">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <span>${resources.length} accessible facilities for this login</span>
+      </div>
+      <div class="resource-meta">
+        ${departmentCounts.map((item) => `<span class="badge">${escapeHtml(item.department)} ${item.count}</span>`).join("")}
+      </div>
+    </div>
+    <div class="department-facility-list">
+      ${resources.slice(0, 8).map((resource) => `
+        <article class="department-facility">
+          <div>
+            <strong>${escapeHtml(resource.name)}</strong>
+            <span>${escapeHtml(resourceDepartment(resource))} - ${escapeHtml(resource.type)} - ${escapeHtml(resource.location)}</span>
+          </div>
+          <span class="badge ${occupancy(resource)}">${occupancy(resource)}</span>
+        </article>
+      `).join("") || `<div class="empty">No facilities available for this department.</div>`}
+    </div>
+  `;
+}
+
+function canAccessBook(book) {
+  if (!currentUser || currentUser.role !== "student") return false;
+  return book.department === "Common" || book.department === currentUser.department;
+}
+
+function bookRegistration(book) {
+  return book.registrations?.find((item) => item.userId === currentUser.id);
+}
+
+function availableBookCopies(book) {
+  return Math.max(0, book.copies - (book.registrations?.length || 0));
+}
+
+function allocatePickupSlot() {
+  const totalRegistrations = state.libraryBooks.reduce((sum, book) => sum + (book.registrations?.length || 0), 0);
+  const slotStart = 9 * 60 + 30 + (totalRegistrations % 36) * 10;
+  const pickupDate = offsetDate(Math.floor(totalRegistrations / 36));
+  const hours = Math.floor(slotStart / 60);
+  const mins = slotStart % 60;
+  return {
+    date: pickupDate,
+    time: `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}`
+  };
+}
+
+function returnDateForPickup(pickupDate) {
+  const date = new Date(`${pickupDate}T00:00:00`);
+  date.setDate(date.getDate() + 14);
+  return date.toISOString().slice(0, 10);
+}
+
+function bookMatchesSearch(book) {
+  const query = filters.librarySearch.toLowerCase();
+  return [book.title, book.author, book.department, book.shelf].join(" ").toLowerCase().includes(query);
+}
+
+function libraryBookHtml(book) {
+    const registration = bookRegistration(book);
+    const copiesLeft = availableBookCopies(book);
+    return `
+      <article class="library-book">
+        <div>
+          <strong>${escapeHtml(book.title)}</strong>
+          <span>${escapeHtml(book.author)}</span>
+          <div class="resource-meta">
+            <span class="badge">${escapeHtml(book.department)}</span>
+            <span class="badge">${copiesLeft} available</span>
+            <span class="badge">Shelf ${escapeHtml(book.shelf)}</span>
+          </div>
+          ${registration ? `
+            <p>Pickup: ${formatDate(registration.pickupDate)}, ${registration.pickupTime}</p>
+            <p>Return by: ${formatDate(registration.returnDate)}, ${registration.returnTime}</p>
+          ` : ""}
+        </div>
+        <button class="primary library-register" type="button" data-book-id="${book.id}" ${registration || copiesLeft === 0 ? "disabled" : ""}>
+          ${registration ? "Registered" : copiesLeft === 0 ? "Unavailable" : "Register"}
+        </button>
+      </article>
+    `;
+}
+
+function renderLibraryBooks() {
+  const dashboardPanel = document.querySelector("#libraryPanel");
+  const dashboardTarget = document.querySelector("#libraryBooks");
+  const catalogTarget = document.querySelector("#libraryCatalog");
+  const searchInput = document.querySelector("#librarySearch");
+
+  if (dashboardPanel) dashboardPanel.classList.toggle("hidden", currentUser?.role !== "student");
+  if (currentUser?.role !== "student") {
+    if (dashboardTarget) dashboardTarget.innerHTML = "";
+    if (catalogTarget) catalogTarget.innerHTML = "";
+    return;
+  }
+
+  if (searchInput && searchInput.value !== filters.librarySearch) {
+    searchInput.value = filters.librarySearch;
+  }
+
+  const books = state.libraryBooks.filter(canAccessBook);
+  const searchedBooks = books.filter(bookMatchesSearch);
+  const dashboardBooks = books.slice(0, 3);
+
+  if (dashboardTarget) {
+    dashboardTarget.innerHTML = dashboardBooks.length ? dashboardBooks.map(libraryBookHtml).join("") : `<div class="empty">No library books are available for your department right now.</div>`;
+  }
+
+  if (catalogTarget) {
+    catalogTarget.innerHTML = searchedBooks.length ? searchedBooks.map(libraryBookHtml).join("") : `<div class="empty">No books match your search.</div>`;
+  }
+}
+
 function renderOccupancy() {
-  const resources = state.resources
+  const resources = visibleResources()
     .filter((resource) => filters.trendType === "all" || resource.type === filters.trendType)
     .filter(searchMatchesResource)
     .sort((a, b) => utilization(b.id) - utilization(a.id));
@@ -482,8 +658,10 @@ function renderOccupancy() {
 }
 
 function renderAlerts() {
-  const pendingConflicts = state.bookings.filter((booking) => booking.status === "Pending" && hasConflict(booking));
-  const underused = state.resources.filter((resource) => utilization(resource.id) < 20 && resource.availability !== "Maintenance").slice(0, 2);
+  const resources = visibleResources();
+  const resourceIds = new Set(resources.map((resource) => resource.id));
+  const pendingConflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking));
+  const underused = resources.filter((resource) => utilization(resource.id) < 20 && resource.availability !== "Maintenance").slice(0, 2);
 
   const alerts = [
     ...pendingConflicts.map((booking) => {
@@ -497,7 +675,8 @@ function renderAlerts() {
 }
 
 function renderResources() {
-  const resources = state.resources
+  renderDepartmentFilter();
+  const resources = visibleResources()
     .filter((resource) => filters.type === "all" || resource.type === filters.type)
     .filter((resource) => filters.availability === "all" || occupancy(resource) === filters.availability)
     .filter(searchMatchesResource);
@@ -516,6 +695,7 @@ function renderResources() {
         </div>
         <div class="resource-meta">
           <span class="badge">${escapeHtml(resource.type)}</span>
+          <span class="badge">${escapeHtml(resourceDepartment(resource))}</span>
           <span class="badge">Capacity ${resource.capacity}</span>
           ${resource.features.map((feature) => `<span class="badge">${escapeHtml(feature)}</span>`).join("")}
         </div>
@@ -572,10 +752,31 @@ function renderEvents() {
   }).join("") : `<div class="empty">No campus events match the current filters.</div>`;
 }
 
+function renderDepartmentFilter() {
+  const select = document.querySelector("#departmentFilter");
+  if (!select) return;
+
+  select.classList.toggle("hidden", !hasRole("admin"));
+  if (!hasRole("admin")) {
+    select.innerHTML = `<option value="all">${escapeHtml(currentUser.department)} facilities</option>`;
+    select.value = "all";
+    filters.department = "all";
+    return;
+  }
+
+  const current = select.value || filters.department;
+  select.innerHTML = [
+    `<option value="all">All departments</option>`,
+    ...departments.map((department) => `<option value="${escapeHtml(department)}">${escapeHtml(department)}</option>`)
+  ].join("");
+  select.value = departments.includes(current) ? current : "all";
+  filters.department = select.value;
+}
+
 function renderMapBuildings() {
   const select = document.querySelector("#mapBuildingFilter");
   const current = select.value || "all";
-  const buildings = [...new Set(state.resources
+  const buildings = [...new Set(visibleResources()
     .filter((resource) => resourceFloor(resource) === filters.mapFloor)
     .map(buildingName))].sort();
   select.innerHTML = [
@@ -651,7 +852,7 @@ function renderMap() {
   renderFloorPlan();
   renderMapBuildings();
   renderMapNavigationControls();
-  const resources = state.resources
+  const resources = visibleResources()
     .filter((resource) => resourceFloor(resource) === filters.mapFloor)
     .filter((resource) => filters.mapType === "all" || resource.type === filters.mapType)
     .filter((resource) => filters.mapBuilding === "all" || buildingName(resource) === filters.mapBuilding)
@@ -677,6 +878,7 @@ function renderMap() {
       <button class="map-detail" type="button" data-resource-id="${resource.id}">
         <strong>${escapeHtml(resource.name)}</strong>
         <span>${escapeHtml(buildingName(resource))} - ${escapeHtml(resource.location)}</span>
+        <span class="badge">${escapeHtml(resourceDepartment(resource))}</span>
         <span class="badge ${status}">${status}</span>
       </button>
     `;
@@ -691,19 +893,21 @@ function renderBookingOptions() {
 
   typeSelect.innerHTML = resourceTypes.map((type) => `<option ${type === selectedType ? "selected" : ""}>${type}</option>`).join("");
 
-  const resources = state.resources.filter((resource) => resource.type === selectedType);
+  const resources = visibleResources().filter((resource) => resource.type === selectedType);
   resourceSelect.innerHTML = resources.map((resource) => (
-    `<option value="${resource.id}">${escapeHtml(resource.name)} - capacity ${resource.capacity}</option>`
-  )).join("");
+    `<option value="${resource.id}">${escapeHtml(resource.name)} - ${escapeHtml(resourceDepartment(resource))} - capacity ${resource.capacity}</option>`
+  )).join("") || `<option value="">No accessible ${escapeHtml(selectedType.toLowerCase())} facilities</option>`;
 }
 
 function renderResourceControls() {
   const typeSelect = document.querySelector("#resourceForm select[name='type']");
+  const departmentSelect = document.querySelector("#resourceForm select[name='department']");
   const statusResource = document.querySelector("#statusResource");
 
   typeSelect.innerHTML = resourceTypes.map((type) => `<option>${type}</option>`).join("");
+  departmentSelect.innerHTML = departments.map((department) => `<option>${department}</option>`).join("");
   statusResource.innerHTML = state.resources.map((resource) => (
-    `<option value="${resource.id}">${escapeHtml(resource.name)} - ${escapeHtml(resource.availability)}</option>`
+    `<option value="${resource.id}">${escapeHtml(resource.name)} - ${escapeHtml(resourceDepartment(resource))} - ${escapeHtml(resource.availability)}</option>`
   )).join("");
 }
 
@@ -732,7 +936,7 @@ function findSuggestions(candidate, type, capacity) {
   ];
 
   const options = [];
-  state.resources
+  visibleResources()
     .filter((resource) => resource.type === type && resource.capacity >= capacity && resource.availability !== "Maintenance")
     .forEach((resource) => {
       const sameSlot = { ...candidate, resourceId: resource.id };
@@ -787,7 +991,9 @@ function autoClassroomDecision(candidate, resource, requestedCapacity) {
 }
 
 function renderBookings() {
+  const resourceIds = new Set(visibleResources().map((resource) => resource.id));
   const bookings = state.bookings
+    .filter((booking) => resourceIds.has(booking.resourceId))
     .filter((booking) => filters.status === "all" || booking.status === filters.status)
     .filter(searchMatchesBooking)
     .sort((a, b) => b.createdAt - a.createdAt);
@@ -819,12 +1025,13 @@ function renderAuth() {
     return;
   }
 
-  document.querySelector("#userChip").textContent = `${currentUser.name} - ${currentUser.role}`;
+  document.querySelector("#userChip").textContent = `${currentUser.name} - ${currentUser.role} - ${currentUser.department}`;
   document.querySelector("#resetDemo").classList.toggle("hidden", !hasRole("admin"));
 
   document.querySelectorAll(".nav-item").forEach((item) => {
     const minRole = item.dataset.minRole;
-    item.classList.toggle("hidden", !hasRole(minRole));
+    const studentOnly = item.dataset.studentOnly === "true";
+    item.classList.toggle("hidden", !hasRole(minRole) || (studentOnly && currentUser.role !== "student"));
   });
 
   const requester = document.querySelector("#bookingForm input[name='requester']");
@@ -862,10 +1069,10 @@ function logout() {
 }
 
 function renderOptimization() {
-  const resourcesByUse = [...state.resources].sort((a, b) => utilization(a.id) - utilization(b.id));
+  const resourcesByUse = visibleResources().sort((a, b) => utilization(a.id) - utilization(b.id));
   const lowUse = resourcesByUse.filter((resource) => utilization(resource.id) < 25 && resource.availability !== "Maintenance").slice(0, 3);
   const highUse = resourcesByUse.filter((resource) => utilization(resource.id) > 65).slice(-3);
-  const maintenance = state.resources.filter((resource) => resource.availability === "Maintenance");
+  const maintenance = resourcesByUse.filter((resource) => resource.availability === "Maintenance");
 
   const items = [
     ...lowUse.map((resource) => `<div class="suggestion"><strong>Route small groups to ${escapeHtml(resource.name)}</strong><p>Current utilization is ${utilization(resource.id)}%, so it is a strong candidate for overflow bookings.</p></div>`),
@@ -876,9 +1083,65 @@ function renderOptimization() {
   document.querySelector("#optimizationReport").innerHTML = items.length ? items.join("") : `<div class="empty">Utilization is balanced across resources.</div>`;
 }
 
+function formatLastSeen(timestamp) {
+  const elapsed = Math.max(1, Math.round((Date.now() - timestamp) / 60000));
+  return `${elapsed} min ago`;
+}
+
+function showIoTNotice(message, isError = false) {
+  const notice = document.querySelector("#iotNotice");
+  notice.textContent = message;
+  notice.className = `notice show${isError ? " error" : ""}`;
+}
+
+function renderIoTDevices() {
+  const target = document.querySelector("#iotDeviceList");
+  if (!target) return;
+
+  const devices = state.iotDevices || [];
+  const onCount = devices.filter((device) => device.status === "On").length;
+  const lorawanCount = devices.filter((device) => device.protocol === "LoRaWAN").length;
+  const wifiCount = devices.filter((device) => device.protocol === "WiFi").length;
+
+  target.innerHTML = `
+    <div class="iot-summary">
+      <span><strong>${devices.length}</strong> connected</span>
+      <span><strong>${onCount}</strong> on</span>
+      <span><strong>${lorawanCount}</strong> LoRaWAN</span>
+      <span><strong>${wifiCount}</strong> WiFi</span>
+    </div>
+    ${devices.length ? devices.map((device) => `
+      <article class="iot-device">
+        <div>
+          <strong>${escapeHtml(device.name)}</strong>
+          <span>${escapeHtml(device.deviceType)} - ${escapeHtml(floorPlans[device.floor]?.label || device.floor)} - ${escapeHtml(device.area)}</span>
+          <span>${escapeHtml(device.protocol)} gateway - last seen ${formatLastSeen(device.lastSeen)}</span>
+        </div>
+        <div class="iot-device-actions">
+          <span class="badge ${device.status === "On" ? "Approved" : "Rejected"}">${device.status}</span>
+          <button class="row-button" type="button" data-iot-action="toggle" data-device-id="${device.id}">
+            Turn ${device.status === "On" ? "off" : "on"}
+          </button>
+        </div>
+      </article>
+    `).join("") : `<div class="empty">No IoT devices connected yet.</div>`}
+  `;
+}
+
+function setAllIoTDevices(status) {
+  state.iotDevices.forEach((device) => {
+    device.status = status;
+    device.lastSeen = Date.now();
+  });
+  saveState();
+  renderIoTDevices();
+}
+
 function renderAll() {
   if (!currentUser) return;
   renderMetrics();
+  renderDepartmentDashboard();
+  renderLibraryBooks();
   renderOccupancy();
   renderAlerts();
   renderResources();
@@ -889,6 +1152,7 @@ function renderAll() {
   renderSuggestions();
   renderBookings();
   renderOptimization();
+  renderIoTDevices();
 }
 
 function setView(viewName) {
@@ -968,6 +1232,11 @@ function wireEvents() {
     renderResources();
   });
 
+  document.querySelector("#departmentFilter").addEventListener("change", (event) => {
+    filters.department = event.target.value;
+    renderAll();
+  });
+
   document.querySelector("#trendFilter").addEventListener("change", (event) => {
     filters.trendType = event.target.value;
     renderOccupancy();
@@ -994,6 +1263,55 @@ function wireEvents() {
     const button = event.target.closest("button[data-event-id]");
     if (!button) return;
     registerForEvent(button.dataset.eventId);
+  });
+
+  document.querySelector("#libraryBooks").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-book-id]");
+    if (!button || currentUser?.role !== "student") return;
+    const book = state.libraryBooks.find((item) => item.id === button.dataset.bookId);
+    if (!book || !canAccessBook(book) || bookRegistration(book) || availableBookCopies(book) === 0) return;
+
+    const slot = allocatePickupSlot();
+    book.registrations ||= [];
+    book.registrations.push({
+      userId: currentUser.id,
+      name: currentUser.name,
+      department: currentUser.department,
+      pickupDate: slot.date,
+      pickupTime: slot.time,
+      returnDate: returnDateForPickup(slot.date),
+      returnTime: "17:00",
+      registeredAt: new Date().toISOString()
+    });
+    saveState();
+    renderLibraryBooks();
+  });
+
+  document.querySelector("#libraryCatalog").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-book-id]");
+    if (!button || currentUser?.role !== "student") return;
+    const book = state.libraryBooks.find((item) => item.id === button.dataset.bookId);
+    if (!book || !canAccessBook(book) || bookRegistration(book) || availableBookCopies(book) === 0) return;
+
+    const slot = allocatePickupSlot();
+    book.registrations ||= [];
+    book.registrations.push({
+      userId: currentUser.id,
+      name: currentUser.name,
+      department: currentUser.department,
+      pickupDate: slot.date,
+      pickupTime: slot.time,
+      returnDate: returnDateForPickup(slot.date),
+      returnTime: "17:00",
+      registeredAt: new Date().toISOString()
+    });
+    saveState();
+    renderLibraryBooks();
+  });
+
+  document.querySelector("#librarySearch").addEventListener("input", (event) => {
+    filters.librarySearch = event.target.value.trim();
+    renderLibraryBooks();
   });
 
   document.querySelector("#mapTypeFilters").addEventListener("click", (event) => {
@@ -1068,6 +1386,11 @@ function wireEvents() {
     }
 
     const resource = getResource(candidate.resourceId);
+    if (!canUseResource(resource)) {
+      showNotice("You can only request facilities assigned to your department or common facilities.", true);
+      return;
+    }
+
     const requestedCapacity = Number(form.elements.capacity.value);
     const classroomDecision = autoClassroomDecision(candidate, resource, requestedCapacity);
 
@@ -1160,9 +1483,11 @@ function wireEvents() {
       id: makeId(),
       name: data.get("name").trim(),
       type: data.get("type"),
+      department: data.get("department"),
       capacity: Number(data.get("capacity")),
       availability: "Available",
       location: data.get("location").trim(),
+      floor: floorFromLocation(data.get("location").trim()),
       features
     });
 
@@ -1180,9 +1505,55 @@ function wireEvents() {
     renderAll();
   });
 
+  document.querySelector("#collegeCloseShutdown").addEventListener("click", () => {
+    if (!hasRole("admin")) return;
+    const closeTime = document.querySelector("#collegeCloseTime").value || "18:00";
+    setAllIoTDevices("Off");
+    showIoTNotice(`All connected lights, fans, and electronics were switched off for college closing time ${closeTime}.`);
+  });
+
+  document.querySelector("#switchAllOn").addEventListener("click", () => {
+    if (!hasRole("admin")) return;
+    setAllIoTDevices("On");
+    showIoTNotice("All connected IoT devices were switched on.");
+  });
+
+  document.querySelector("#iotDeviceForm").addEventListener("submit", (event) => {
+    event.preventDefault();
+    if (!hasRole("admin")) return;
+    const data = new FormData(event.currentTarget);
+    state.iotDevices.unshift({
+      id: makeId(),
+      name: data.get("name").trim(),
+      deviceType: data.get("deviceType"),
+      protocol: data.get("protocol"),
+      area: data.get("area").trim(),
+      floor: data.get("floor"),
+      status: "On",
+      lastSeen: Date.now()
+    });
+    saveState();
+    event.currentTarget.reset();
+    showIoTNotice(`${data.get("name").trim()} connected through ${data.get("protocol")}.`);
+    renderIoTDevices();
+  });
+
+  document.querySelector("#iotDeviceList").addEventListener("click", (event) => {
+    const button = event.target.closest("button[data-iot-action]");
+    if (!button || !hasRole("admin")) return;
+    const device = state.iotDevices.find((item) => item.id === button.dataset.deviceId);
+    if (!device) return;
+    device.status = device.status === "On" ? "Off" : "On";
+    device.lastSeen = Date.now();
+    saveState();
+    showIoTNotice(`${device.name} turned ${device.status.toLowerCase()} through ${device.protocol}.`);
+    renderIoTDevices();
+  });
+
   document.querySelector("#resetDemo").addEventListener("click", () => {
     if (!hasRole("admin")) return;
-    state = { resources: cloneData(seedResources), bookings: cloneData(seedBookings), events: cloneData(seedEvents) };
+    state = { resources: cloneData(seedResources), bookings: cloneData(seedBookings), events: cloneData(seedEvents), iotDevices: cloneData(seedIoTDevices), libraryBooks: cloneData(seedLibraryBooks) };
+    syncSeedResourceDetails();
     saveState();
     renderAll();
   });

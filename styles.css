@@ -752,9 +752,110 @@ input {
 
 .booking-form,
 .resource-form,
-.status-editor {
+.status-editor,
+.iot-form,
+.iot-actions {
   display: grid;
   gap: 14px;
+}
+
+.iot-actions {
+  grid-template-columns: minmax(140px, 1fr) auto auto;
+  align-items: end;
+}
+
+.iot-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.iot-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(90px, 1fr));
+  gap: 8px;
+}
+
+.iot-summary span,
+.iot-device {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.iot-summary span {
+  padding: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.iot-summary strong {
+  display: block;
+  color: var(--ink);
+  font-size: 20px;
+}
+
+.iot-device {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.iot-device span {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.iot-device-actions {
+  display: grid;
+  justify-items: end;
+  align-content: center;
+  gap: 8px;
+}
+
+.department-summary,
+.department-facility-list,
+.library-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.department-summary-top,
+.department-facility,
+.library-book {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.department-summary-top span,
+.department-facility span:not(.badge),
+.library-book span:not(.badge) {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.library-book {
+  align-items: center;
+}
+
+.library-book p {
+  margin: 10px 0 0;
+  color: var(--accent-strong);
+  font-weight: 800;
+}
+
+.library-register {
+  white-space: nowrap;
 }
 
 label {
@@ -897,6 +998,26 @@ th {
 
   .map-search {
     grid-template-columns: 1fr;
+  }
+
+  .iot-actions,
+  .iot-summary,
+  .iot-device {
+    grid-template-columns: 1fr;
+  }
+
+  .iot-device {
+    display: grid;
+  }
+
+  .iot-device-actions {
+    justify-items: start;
+  }
+
+  .department-summary-top,
+  .department-facility,
+  .library-book {
+    display: grid;
   }
 
   .chart-row {
