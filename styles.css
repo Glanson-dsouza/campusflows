@@ -589,7 +589,12 @@ h2 {
   display: block;
 }
 
-.metric-grid,
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
 .resource-grid,
 .event-grid {
   display: grid;
@@ -604,6 +609,15 @@ h2 {
   grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.9fr);
   gap: 16px;
   margin-top: 16px;
+}
+
+.map-layout {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  align-items: start;
+}
+
+.map-layout > * {
+  min-width: 0;
 }
 
 .panel,
@@ -737,7 +751,8 @@ input {
 
 .campus-map {
   position: relative;
-  min-height: 560px;
+  width: 100%;
+  max-width: 100%;
   aspect-ratio: 1536 / 1058;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -1088,6 +1103,10 @@ input {
 
 .library-book {
   align-items: center;
+}
+
+.library-panel + .library-panel {
+  margin-top: 16px;
 }
 
 .library-book p {

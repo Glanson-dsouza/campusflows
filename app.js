@@ -65,14 +65,7 @@ const seedIoTDevices = [
   { id: "iot4", name: "CSE Lab Fan Controller", deviceType: "Fans", protocol: "LoRaWAN", area: "OS/USP/MF Lab 2718-A", floor: "second", status: "Off", lastSeen: Date.now() - 300000 }
 ];
 
-const seedLibraryBooks = [
-  { id: "lib1", title: "Introduction to Algorithms", author: "Cormen, Leiserson, Rivest, Stein", department: "CSE", copies: 4, shelf: "CSE-A12", registrations: [] },
-  { id: "lib2", title: "Database System Concepts", author: "Silberschatz, Korth, Sudarshan", department: "CSE", copies: 3, shelf: "CSE-B04", registrations: [] },
-  { id: "lib3", title: "Marketing Management", author: "Philip Kotler", department: "MBA", copies: 5, shelf: "MBA-M02", registrations: [] },
-  { id: "lib4", title: "Electronic Devices and Circuits", author: "Boylestad", department: "ECE", copies: 3, shelf: "ECE-E08", registrations: [] },
-  { id: "lib5", title: "Engineering Mathematics", author: "B. S. Grewal", department: "Common", copies: 6, shelf: "GEN-G01", registrations: [] },
-  { id: "lib6", title: "Communication Skills", author: "Sanjay Kumar", department: "Common", copies: 8, shelf: "GEN-G05", registrations: [] }
-];
+const seedLibraryBooks = readLibraryBooksFromJson();
 
 let state = loadState();
 syncSeedResourceDetails();
@@ -80,6 +73,7 @@ state.events ||= cloneData(seedEvents);
 state.iotDevices ||= cloneData(seedIoTDevices);
 state.libraryBooks ||= cloneData(seedLibraryBooks);
 state.users = normalizeUsers(state.users);
+syncSeedLibraryBooks();
 saveState();
 let currentUser = loadSession();
 let filters = {
@@ -298,6 +292,37 @@ function escapeHtml(value) {
   })[char]);
 }
 
+function readLibraryBooksFromJson() {
+  const source = document.querySelector("#libraryBookData");
+  if (!source) return [];
+
+  try {
+    const books = JSON.parse(source.textContent);
+    if (!Array.isArray(books)) return [];
+    return books.map(normalizeLibraryBook).filter(Boolean);
+  } catch (error) {
+    console.warn("Library book JSON could not be parsed.", error);
+    return [];
+  }
+}
+
+function normalizeLibraryBook(book, index) {
+  const title = String(book.name || book.title || "").trim();
+  if (!title) return null;
+
+  const generatedId = title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+  const copies = Number(book.copies);
+  return {
+    id: String(book.id || `lib-${generatedId || index + 1}`).trim(),
+    title,
+    author: String(book.author || "Library").trim(),
+    department: String(book.department || "Common").trim(),
+    copies: Number.isFinite(copies) && copies > 0 ? Math.floor(copies) : 1,
+    shelf: String(book.shelf || "GEN").trim(),
+    registrations: []
+  };
+}
+
 const views = {
   dashboard: document.querySelector("#dashboardView"),
   resources: document.querySelector("#resourcesView"),
@@ -352,6 +377,17 @@ function syncSeedResourceDetails() {
     .filter((resource) => !existingIds.has(resource.id))
     .map((resource) => ({ ...cloneData(resource), floor: resource.floor || floorFromLocation(resource.location), department: resource.department || "Common" }));
   state.resources = [...synced, ...missingSeeds];
+}
+
+function syncSeedLibraryBooks() {
+  const existingById = Object.fromEntries((state.libraryBooks || []).map((book) => [book.id, book]));
+  state.libraryBooks = seedLibraryBooks.map((seed) => {
+    const existing = existingById[seed.id];
+    return {
+      ...cloneData(seed),
+      registrations: cloneData(existing?.registrations || [])
+    };
+  });
 }
 
 function floorFromLocation(location) {
@@ -556,12 +592,17 @@ function renderMetrics() {
   const conflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking)).length;
   const avgUtil = total ? Math.round(resources.reduce((sum, resource) => sum + utilization(resource.id), 0) / total) : 0;
 
-  document.querySelector("#metrics").innerHTML = [
+  const metrics = [
     ["Resources", total, "Inventory"],
     ["Pending Requests", pending, "Workflow"],
-    ["Conflict Alerts", conflicts, "Scheduling"],
     ["Avg. Utilization", `${avgUtil}%`, "Optimization"]
-  ].map(([label, value, tag]) => `
+  ];
+
+  if (currentUser.role !== "student") {
+    metrics.splice(2, 0, ["Conflict Alerts", conflicts, "Scheduling"]);
+  }
+
+  document.querySelector("#metrics").innerHTML = metrics.map(([label, value, tag]) => `
     <article class="metric">
       <small>${tag}</small>
       <strong>${value}</strong>
@@ -634,7 +675,7 @@ function allocatePickupSlot() {
 
 function returnDateForPickup(pickupDate) {
   const date = new Date(`${pickupDate}T00:00:00`);
-  date.setDate(date.getDate() + 14);
+  date.setDate(date.getDate() + 7);
   return date.toISOString().slice(0, 10);
 }
 
@@ -643,41 +684,43 @@ function bookMatchesSearch(book) {
   return [book.title, book.author, book.department, book.shelf].join(" ").toLowerCase().includes(query);
 }
 
-function libraryBookHtml(book) {
-    const registration = bookRegistration(book);
-    const copiesLeft = availableBookCopies(book);
-    return `
-      <article class="library-book">
-        <div>
-          <strong>${escapeHtml(book.title)}</strong>
-          <span>${escapeHtml(book.author)}</span>
-          <div class="resource-meta">
-            <span class="badge">${escapeHtml(book.department)}</span>
-            <span class="badge">${copiesLeft} available</span>
-            <span class="badge">Shelf ${escapeHtml(book.shelf)}</span>
-          </div>
-          ${registration ? `
-            <p>Pickup: ${formatDate(registration.pickupDate)}, ${registration.pickupTime}</p>
-            <p>Return by: ${formatDate(registration.returnDate)}, ${registration.returnTime}</p>
-          ` : ""}
+function libraryBookHtml(book, showAction = true) {
+  const registration = bookRegistration(book);
+  const copiesLeft = availableBookCopies(book);
+  return `
+    <article class="library-book">
+      <div>
+        <strong>${escapeHtml(book.title)}</strong>
+        <span>${escapeHtml(book.author)}</span>
+        <div class="resource-meta">
+          <span class="badge">${escapeHtml(book.department)}</span>
+          <span class="badge">${copiesLeft} available</span>
+          <span class="badge">Shelf ${escapeHtml(book.shelf)}</span>
         </div>
+        ${registration ? `
+          <p>Pickup: ${formatDate(registration.pickupDate)}, ${registration.pickupTime}</p>
+          <p>Return by: ${formatDate(registration.returnDate)}, ${registration.returnTime}</p>
+        ` : ""}
+      </div>
+      ${showAction ? `
         <button class="primary library-register" type="button" data-book-id="${book.id}" ${registration || copiesLeft === 0 ? "disabled" : ""}>
           ${registration ? "Registered" : copiesLeft === 0 ? "Unavailable" : "Register"}
         </button>
-      </article>
-    `;
+      ` : ""}
+    </article>
+  `;
 }
 
 function renderLibraryBooks() {
-  const dashboardPanel = document.querySelector("#libraryPanel");
-  const dashboardTarget = document.querySelector("#libraryBooks");
   const catalogTarget = document.querySelector("#libraryCatalog");
+  const studentTarget = document.querySelector("#studentLibraryBooks");
+  const suggestionsTarget = document.querySelector("#libraryBookSuggestions");
   const searchInput = document.querySelector("#librarySearch");
 
-  if (dashboardPanel) dashboardPanel.classList.toggle("hidden", currentUser?.role !== "student");
   if (currentUser?.role !== "student") {
-    if (dashboardTarget) dashboardTarget.innerHTML = "";
     if (catalogTarget) catalogTarget.innerHTML = "";
+    if (studentTarget) studentTarget.innerHTML = "";
+    if (suggestionsTarget) suggestionsTarget.innerHTML = "";
     return;
   }
 
@@ -685,16 +728,28 @@ function renderLibraryBooks() {
     searchInput.value = filters.librarySearch;
   }
 
-  const books = state.libraryBooks.filter(canAccessBook);
-  const searchedBooks = books.filter(bookMatchesSearch);
-  const dashboardBooks = books.slice(0, 3);
+  const books = state.libraryBooks.filter(canAccessBook).sort((firstBook, secondBook) => firstBook.title.localeCompare(secondBook.title));
+  const query = filters.librarySearch.toLowerCase();
+  const exactBook = books.find((book) => book.title.toLowerCase() === query);
+  const searchedBooks = query ? (exactBook ? [exactBook] : books.filter(bookMatchesSearch)) : [];
+  const registeredBooks = books.filter(bookRegistration);
 
-  if (dashboardTarget) {
-    dashboardTarget.innerHTML = dashboardBooks.length ? dashboardBooks.map(libraryBookHtml).join("") : `<div class="empty">No library books are available for your department right now.</div>`;
+  if (suggestionsTarget) {
+    suggestionsTarget.innerHTML = books.map((book) => `
+      <option value="${escapeHtml(book.title)}">${escapeHtml(book.author)} - ${escapeHtml(book.department)} - Shelf ${escapeHtml(book.shelf)}</option>
+    `).join("");
+  }
+
+  if (studentTarget) {
+    studentTarget.innerHTML = registeredBooks.length
+      ? registeredBooks.map((book) => libraryBookHtml(book, false)).join("")
+      : `<div class="empty">Registered books will appear here after you select and register a book.</div>`;
   }
 
   if (catalogTarget) {
-    catalogTarget.innerHTML = searchedBooks.length ? searchedBooks.map(libraryBookHtml).join("") : `<div class="empty">No books match your search.</div>`;
+    catalogTarget.innerHTML = query
+      ? searchedBooks.length ? searchedBooks.map((book) => libraryBookHtml(book)).join("") : `<div class="empty">No books match your search.</div>`
+      : `<div class="empty">Search and select a book name to register.</div>`;
   }
 }
 
@@ -717,6 +772,12 @@ function renderOccupancy() {
 }
 
 function renderAlerts() {
+  const panel = document.querySelector("#dashboardAlertsPanel");
+  if (panel) panel.classList.toggle("hidden", currentUser?.role === "student");
+
+  const target = document.querySelector("#conflictAlerts");
+  if (!target || currentUser?.role === "student") return;
+
   const resources = visibleResources();
   const resourceIds = new Set(resources.map((resource) => resource.id));
   const pendingConflicts = state.bookings.filter((booking) => resourceIds.has(booking.resourceId) && booking.status === "Pending" && hasConflict(booking));
@@ -730,7 +791,7 @@ function renderAlerts() {
     ...underused.map((resource) => `<div class="alert warn"><strong>${escapeHtml(resource.name)}</strong><p>Low utilization at ${utilization(resource.id)}%. Route smaller bookings here when capacity fits.</p></div>`)
   ];
 
-  document.querySelector("#conflictAlerts").innerHTML = alerts.length ? alerts.join("") : `<div class="empty">No conflict alerts right now.</div>`;
+  target.innerHTML = alerts.length ? alerts.join("") : `<div class="empty">No conflict alerts right now.</div>`;
 }
 
 function renderResources() {
@@ -1497,28 +1558,6 @@ function wireEvents() {
     const button = event.target.closest("button[data-event-id]");
     if (!button) return;
     registerForEvent(button.dataset.eventId);
-  });
-
-  document.querySelector("#libraryBooks").addEventListener("click", (event) => {
-    const button = event.target.closest("button[data-book-id]");
-    if (!button || currentUser?.role !== "student") return;
-    const book = state.libraryBooks.find((item) => item.id === button.dataset.bookId);
-    if (!book || !canAccessBook(book) || bookRegistration(book) || availableBookCopies(book) === 0) return;
-
-    const slot = allocatePickupSlot();
-    book.registrations ||= [];
-    book.registrations.push({
-      userId: currentUser.id,
-      name: currentUser.name,
-      department: currentUser.department,
-      pickupDate: slot.date,
-      pickupTime: slot.time,
-      returnDate: returnDateForPickup(slot.date),
-      returnTime: "17:00",
-      registeredAt: new Date().toISOString()
-    });
-    saveState();
-    renderLibraryBooks();
   });
 
   document.querySelector("#libraryCatalog").addEventListener("click", (event) => {
